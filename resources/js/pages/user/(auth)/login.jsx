@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import {
@@ -13,6 +12,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Import images - these would normally come from your public folder
 import AppLogo from "../../../../../public/images/app-logo.svg";
@@ -20,53 +20,53 @@ import AppLogo from "../../../../../public/images/app-logo.svg";
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [rememberMe, setRememberMe] = useState(false);
-    const [showPassword, setShowPassword] = useState(false); // Added state for password visibility
+    const [showPassword, setShowPassword] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
+    const { login, isAuthenticated } = useAuth();
     const navigate = useNavigate();
 
-    // Validation function
-    const validateForm = () => {
-        // Check if both fields are empty
-        if (!email && !password) {
+    // Redirect if already logged in
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/', { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault(); // Prevent default form submission
+        
+        // Basic validation
+        if (!email || !password) {
             toast.error("Vui lòng nhập email và mật khẩu");
-            return false;
-        }
-
-        // Check if email is empty
-        if (!email) {
-            toast.error("Vui lòng nhập email");
-            return false;
-        }
-
-        // Check if password is empty
-        if (!password) {
-            toast.error("Vui lòng nhập mật khẩu");
-            return false;
+            return;
         }
 
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             toast.error("Email không đúng định dạng");
-            return false;
+            return;
         }
 
         // Validate password length
         if (password.length < 8) {
             toast.error("Mật khẩu phải có ít nhất 8 ký tự");
-            return false;
+            return;
         }
 
-        return true;
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault(); // Prevent default form submission
-        if (validateForm()) {
-            console.log("Login submitted:", { email, password, rememberMe });
-            navigate("/");
-            toast.success("Đăng nhập thành công!");
+        setSubmitting(true);
+        try {
+            // Attempt login
+            const result = await login(email, password);
+            if (result.success) {
+                toast.success("Đăng nhập thành công!");
+                navigate("/");
+            } else {
+                toast.error(result.message || "Không thể đăng nhập, vui lòng thử lại sau!");
+            }
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -108,6 +108,7 @@ export default function LoginPage() {
                                         }
                                         placeholder="user@example.com"
                                         className="h-11 bg-white"
+                                        disabled={submitting}
                                     />
                                 </div>
 
@@ -127,6 +128,7 @@ export default function LoginPage() {
                                             }
                                             placeholder="*******"
                                             className="h-11 bg-white pr-10"
+                                            disabled={submitting}
                                         />
                                         <Button
                                             type="button"
@@ -134,6 +136,7 @@ export default function LoginPage() {
                                             size="icon"
                                             className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                                             onClick={togglePasswordVisibility}
+                                            disabled={submitting}
                                         >
                                             {showPassword ? (
                                                 <EyeOff
@@ -149,19 +152,7 @@ export default function LoginPage() {
                                 </div>
 
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id="remember"
-                                            checked={rememberMe}
-                                            onCheckedChange={setRememberMe}
-                                        />
-                                        <Label
-                                            htmlFor="remember"
-                                            className="text-sm font-normal cursor-pointer"
-                                        >
-                                            Ghi nhớ đăng nhập
-                                        </Label>
-                                    </div>
+
                                     <Link to="/forgot-password">
                                     <a
                                         className="text-sm text-primary hover:underline"
@@ -175,8 +166,19 @@ export default function LoginPage() {
                                     type="submit"
                                     className="w-full h-11"
                                     size="lg"
+                                    disabled={submitting}
                                 >
-                                    Đăng nhập
+                                    {submitting ? (
+                                        <span className="flex items-center justify-center">
+                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Đang đăng nhập...
+                                        </span>
+                                    ) : (
+                                        "Đăng nhập"
+                                    )}
                                 </Button>
                                 <div className="text-center text-sm w-full">
                                     <p>
@@ -197,7 +199,7 @@ export default function LoginPage() {
                     {/* Credit */}
                     <div className="w-full text-center">
                         <p className="text-sm text-gray-500">
-                            Developed by PEDROJECT @{new Date().getFullYear()}
+                            Developed by PEDROLAB @{new Date().getFullYear()}
                         </p>
                     </div>
                 </div>

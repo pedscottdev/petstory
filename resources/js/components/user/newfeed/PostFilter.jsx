@@ -16,7 +16,7 @@ export default function PostFilter() {
                         <TabsTrigger
                             key={filter.id}
                             value={filter.id}
-                            className="hover:cursor-pointer px-3"
+                            className="px-4 data-[state=active]:bg-[#91114D] data-[state=active]:text-white hover:cursor-pointer data-[state=active]:shadow-sm data-[state=active]:font-semibold"
                         >
                             {filter.label}
                         </TabsTrigger>

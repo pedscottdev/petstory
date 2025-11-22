@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ArrowBigRight } from 'lucide-react';
 import { TbArrowNarrowRight } from 'react-icons/tb';
 import { LuArrowRight } from 'react-icons/lu';
+import { Link } from 'react-router-dom';
 
 export default function PeopleYouMayKnow() {
   const [people] = useState([
@@ -61,10 +62,12 @@ export default function PeopleYouMayKnow() {
                 </Button>
           </div>
         ))}
-        <button  className='flex items-center gap-2 py-1 px-2 rounded-md text-[15px] font-semibold hover:cursor-pointer hover:bg-gray-50 hover:text-[#B10E5A]'>
-          <p>Xem tất cả gợi ý</p>
-          <LuArrowRight size={16} />
-        </button>
+        <Link to="/followings">
+          <button className='flex items-center gap-2 py-1 px-2 rounded-md text-[15px] font-semibold hover:cursor-pointer hover:bg-gray-50 hover:text-[#B10E5A]'>
+            <p>Khám phá mọi người xung quanh</p>
+            <LuArrowRight size={16} />
+          </button>
+        </Link>
       </CardContent>
     </Card>
   );

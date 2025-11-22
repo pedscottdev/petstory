@@ -1,16 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { Eye, EyeOff } from 'lucide-react';
 
 import AdminLogo from '../../../../../public/images/admin-logo.svg'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { login, isAuthenticated } = useAdminAuth();
 
-  const handleSubmit = () => {
-    console.log('Login attempt:', { email, password });
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Validation functions
+  const validateEmail = (email) => {
+    if (!email) {
+      toast.error('Email không được bỏ trống');
+      return false;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Email phải đúng định dạng email');
+      return false;
+    }
+    
+    return true;
+  };
+  
+  const validatePassword = (password) => {
+    if (!password) {
+      toast.error('Mật khẩu không được bỏ trống');
+      return false;
+    }
+    
+    if (password.length <= 6) {
+      toast.error('Mật khẩu phải lớn hơn 6 chữ số');
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validate email and password
+    if (!validateEmail(email) || !validatePassword(password)) {
+      return;
+    }
+    
+    // Set loading state
+    setLoading(true);
+    
+    try {
+      // Attempt admin login
+      const result = await login(email, password);
+      if (result.success) {
+        toast.success('Đăng nhập thành công');
+        navigate('/admin/dashboard');
+      } else {
+        toast.error(result.message || 'Thông tin đăng nhập không chính xác');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -22,7 +88,7 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Form */}
-        <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email Field */}
           <div className="space-y-2">
             <Label htmlFor="email" className="text-white text-sm font-medium">
@@ -35,6 +101,7 @@ export default function AdminLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="!py-5 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500"
+              disabled={loading}
             />
           </div>
 
@@ -44,31 +111,47 @@ export default function AdminLoginPage() {
               <Label htmlFor="password" className="text-white text-sm font-medium">
                 Password
               </Label>
-              <a
-                href="#"
-                className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
-                Forgot password?
-              </a>
             </div>
-            <Input
-              id="password"
-              type="password"
-              placeholder="********"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="!py-5 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="********"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="!py-5 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500 pr-10"
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center hover:cursor-pointer"
+                disabled={loading}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5 text-gray-500" /> : <Eye className="h-5 w-5 text-gray-500" />}
+              </button>
+            </div>
           </div>
 
           {/* Submit Button */}
           <Button
-            onClick={handleSubmit}
-            className="w-full bg-gradient-to-r from-pink-700 via-purple-700 to-orange-700 text-white font-medium py-5 text-md rounded-lg transition-colors"
+            type="submit"
+            className="w-full bg-gradient-to-r from-pink-700 via-purple-700 to-orange-700 text-white font-medium py-5 text-md rounded-lg transition-all active:scale-95 duration-200"
+            disabled={loading}
           >
-            Đăng nhập quản trị
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Đang đăng nhập...
+              </span>
+            ) : (
+              "Đăng nhập quản trị"
+            )}
           </Button>
-        </div>
+        </form>
 
       </div>
     </div>

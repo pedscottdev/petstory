@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\PetController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,12 +15,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Authentication routes
+Route::post('auth/login', [AuthController::class, 'loginUser']);
+Route::post('auth/admin-login', [AuthController::class, 'loginAdmin']);
+Route::post('auth/register', [AuthController::class, 'register']);
+Route::post('auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::post('auth/generate-otp', [AuthController::class, 'generateOTP']);
+Route::post('auth/verify-otp', [AuthController::class, 'verifyOTP']);
+Route::post('auth/confirm-password', [AuthController::class, 'confirmNewPassword']);
+Route::get('user', [AuthController::class, 'user'])->middleware('auth:sanctum');
+
 // Pet CRUD routes
-Route::apiResource('pets', PetController::class);
-
-// Additional pet routes
-Route::get('pets/species/{species}', [PetController::class, 'getBySpecies'])
-    ->name('pets.by-species');
-
-Route::get('pets-needing-vaccination', [PetController::class, 'needingVaccination'])
-    ->name('pets.needing-vaccination');

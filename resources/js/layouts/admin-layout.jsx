@@ -1,9 +1,9 @@
-import React from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { Button } from "@/components/ui/button";
-import { Home, Users, FileText, AlertTriangle, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import AdminLogo from "../../../public/images/admin-logo.svg";
 
 import { MdSpaceDashboard } from "react-icons/md";
@@ -11,9 +11,25 @@ import { FaUserCog } from "react-icons/fa";
 import { MdNoteAlt } from "react-icons/md";
 import { TiWarning } from "react-icons/ti";
 
+// Import AlertDialog components
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 export default function AdminLayout() {
     const location = useLocation();
     const navigate = useNavigate();
+    const { logout } = useAdminAuth();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
     const navItems = [
         {
@@ -38,11 +54,21 @@ export default function AdminLayout() {
         },
     ];
 
-    const handleLogout = () => {
-        // Navigate to admin login page
-        navigate("/admin/login");
-        // Show success toast
-        toast.success("Đăng xuất thành công");
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+        try {
+            // Call admin logout
+            await logout();
+            // Navigate to admin login page
+            navigate("/admin/login");
+            // Show success toast
+            toast.success("Đăng xuất thành công");
+        } catch (error) {
+            toast.error("Có lỗi xảy ra khi đăng xuất");
+        } finally {
+            setIsLoggingOut(false);
+            setShowLogoutDialog(false);
+        }
     };
 
     return (
@@ -86,20 +112,40 @@ export default function AdminLayout() {
                     </div>
                 </nav>
                 <div className="px-4 mt-8">
-                    <Button
-                        variant="outline"
-                        className="w-full justify-start h-12 rounded-lg border-gray-600 bg-gray-800"
-                        onClick={handleLogout}
-                    >
-                        <LogOut className="mr-3 h-5 w-5" />
-                        <span className="font-medium">Đăng xuất</span>
-                    </Button>
+                    <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+                        <AlertDialogTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start h-12 rounded-lg border-gray-600 bg-gray-800"
+                            >
+                                <LogOut className="mr-3 h-5 w-5" />
+                                <span className="font-medium">Đăng xuất</span>
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className={"page-header text-[22px]"}>Xác nhận đăng xuất</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Bạn có chắc chắn muốn đăng xuất khỏi hệ thống quản trị không?
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel disabled={isLoggingOut}>Hủy</AlertDialogCancel>
+                                <AlertDialogAction 
+                                    onClick={handleLogout} 
+                                    disabled={isLoggingOut}
+                                >
+                                    {isLoggingOut ? "Đang đăng xuất..." : "Xác nhận"}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 overflow-auto">
-                <div className="p-6">
+            <div className="flex-1 overflow-auto h-full">
+                <div className="p-4 px-6">
                     <Outlet />
                 </div>
             </div>

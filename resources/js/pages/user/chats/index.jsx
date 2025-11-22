@@ -10,6 +10,8 @@ import {
     Check,
     CheckCheck,
     ChevronDown,
+    XIcon,
+    UserCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,14 +26,16 @@ import {
 import { RiChatNewLine } from "react-icons/ri";
 import { LuImage } from "react-icons/lu";
 import NoMessage from "../../../../../public/images/no-message.svg";
+import { PiNotePencilBold } from "react-icons/pi";
+import { TbEdit } from "react-icons/tb";
 
 // Mock data for conversations with separate message histories
 const mockConversations = [
     {
         id: 1,
         userId: 1,
-        userName: "Nguyễn Văn A",
-        userAvatar: "",
+        userName: "Nguyễn Văn An",
+        userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop",
         isOnline: true,
         timestamp: "5 phút",
         unreadCount: 2,
@@ -77,8 +81,8 @@ const mockConversations = [
     {
         id: 2,
         userId: 2,
-        userName: "Trần Thị B",
-        userAvatar: "",
+        userName: "Trần Thị Bình",
+        userAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
         isOnline: false,
         timestamp: "1 giờ",
         unreadCount: 0,
@@ -124,8 +128,8 @@ const mockConversations = [
     {
         id: 3,
         userId: 3,
-        userName: "Phạm Văn C",
-        userAvatar: "",
+        userName: "Phạm Văn Cường",
+        userAvatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop",
         isOnline: true,
         timestamp: "13-10",
         unreadCount: 5,
@@ -171,8 +175,8 @@ const mockConversations = [
     {
         id: 4,
         userId: 4,
-        userName: "Lê Thị D",
-        userAvatar: "",
+        userName: "Lê Thị Dung",
+        userAvatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop",
         isOnline: false,
         timestamp: "12-10",
         unreadCount: 0,
@@ -204,8 +208,8 @@ const mockConversations = [
     {
         id: 5,
         userId: 5,
-        userName: "Hoàng Văn E",
-        userAvatar: "",
+        userName: "Hoàng Văn Em",
+        userAvatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop",
         isOnline: true,
         timestamp: "11-10",
         unreadCount: 1,
@@ -234,17 +238,125 @@ const mockConversations = [
             },
         ],
     },
+    {
+        id: 6,
+        userId: 6,
+        userName: "Vũ Thị Hoa",
+        userAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop",
+        isOnline: true,
+        timestamp: "10-10",
+        unreadCount: 0,
+        isRead: true,
+        messages: [
+            {
+                id: 1,
+                senderId: 6,
+                text: "Bạn ơi, bạn có nuôi thú cưng không?",
+                timestamp: "Oct 10",
+                isRead: true,
+            },
+            {
+                id: 2,
+                senderId: 0,
+                text: "Có nhé, mình nuôi một chú mèo rất đáng yêu!",
+                timestamp: "Oct 10",
+                isRead: true,
+            },
+            {
+                id: 3,
+                senderId: 6,
+                text: "Thật vậy sao? Bạn có thể chia sẻ ảnh được không?",
+                timestamp: "Oct 10",
+                isRead: true,
+            },
+        ],
+    },
+    {
+        id: 7,
+        userId: 7,
+        userName: "Đặng Văn Giang",
+        userAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+        isOnline: false,
+        timestamp: "09-10",
+        unreadCount: 3,
+        isRead: false,
+        messages: [
+            {
+                id: 1,
+                senderId: 7,
+                text: "Chào bạn, mình thấy bạn chia sẻ nhiều về thú cưng quá!",
+                timestamp: "Oct 9",
+                isRead: true,
+            },
+            {
+                id: 2,
+                senderId: 0,
+                text: "Chào bạn! Đúng vậy, mình rất yêu thích động vật.",
+                timestamp: "Oct 9",
+                isRead: true,
+            },
+            {
+                id: 3,
+                senderId: 7,
+                text: "Bạn có thể tư vấn giúp mình cách chăm sóc chó không?",
+                timestamp: "Oct 9",
+                isRead: false,
+            },
+        ],
+    },
 ];
 
 // Mock data for users
 const mockUsers = [
-    { id: 1, name: "Nguyễn Văn A", avatar: "", isOnline: true },
-    { id: 2, name: "Trần Thị B", avatar: "", isOnline: false },
-    { id: 3, name: "Phạm Văn C", avatar: "", isOnline: true },
-    { id: 4, name: "Lê Thị D", avatar: "", isOnline: false },
-    { id: 5, name: "Hoàng Văn E", avatar: "", isOnline: true },
-    { id: 6, name: "Vũ Thị F", avatar: "", isOnline: true },
-    { id: 7, name: "Đặng Văn G", avatar: "", isOnline: false },
+    { 
+        id: 1, 
+        name: "Nguyễn Văn An", 
+        avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop", 
+        email: "nguyenvana@example.com",
+        isOnline: true 
+    },
+    { 
+        id: 2, 
+        name: "Trần Thị Bình", 
+        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop", 
+        email: "tranthib@example.com",
+        isOnline: false 
+    },
+    { 
+        id: 3, 
+        name: "Phạm Văn Cường", 
+        avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100&h=100&fit=crop", 
+        email: "phamvanc@example.com",
+        isOnline: true 
+    },
+    { 
+        id: 4, 
+        name: "Lê Thị Dung", 
+        avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop", 
+        email: "lethid@example.com",
+        isOnline: false 
+    },
+    { 
+        id: 5, 
+        name: "Hoàng Văn Em", 
+        avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop", 
+        email: "hoangvane@example.com",
+        isOnline: true 
+    },
+    { 
+        id: 6, 
+        name: "Vũ Thị Hoa", 
+        avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop", 
+        email: "vuthif@example.com",
+        isOnline: true 
+    },
+    { 
+        id: 7, 
+        name: "Đặng Văn Giang", 
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop", 
+        email: "dangvang@example.com",
+        isOnline: false 
+    },
 ];
 
 // Helper function to get the last message from a conversation
@@ -269,6 +381,8 @@ export default function ChatPage() {
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
     const [showScrollButton, setShowScrollButton] = useState(false);
+    const [previewImage, setPreviewImage] = useState(null); // Add state for image preview
+    const fileInputRef = useRef(null); // Add ref for file input
 
     // Filter conversations based on search term
     const filteredConversations = conversations.filter(
@@ -317,12 +431,12 @@ export default function ChatPage() {
 
     // Handle sending a new message
     const handleSendMessage = () => {
-        if (newMessage.trim() === "" || !selectedConversation) return;
+        if ((newMessage.trim() === "" && !previewImage) || !selectedConversation) return;
 
         const newMsgId =
             selectedConversation.messages.length > 0
                 ? Math.max(...selectedConversation.messages.map((m) => m.id)) +
-                  1
+                1
                 : 1;
 
         const newMsg = {
@@ -334,6 +448,8 @@ export default function ChatPage() {
                 minute: "2-digit",
             }),
             isRead: false,
+            // Add image to message if exists
+            ...(previewImage && { image: previewImage })
         };
 
         // Update conversation with new message
@@ -358,9 +474,30 @@ export default function ChatPage() {
             isRead: true,
         });
         setNewMessage("");
+        setPreviewImage(null); // Clear image preview after sending
 
         // Scroll to bottom after sending message
         setTimeout(scrollToBottom, 100);
+    };
+
+    // Handle image selection
+    const handleImageSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setPreviewImage(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // Remove image preview
+    const removeImagePreview = () => {
+        setPreviewImage(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
 
     // Handle creating a new conversation
@@ -433,19 +570,19 @@ export default function ChatPage() {
     };
 
     return (
-        <div className="flex h-[calc(100vh-3.5rem)] bg-[#f5f3f0] px-26 py-3 gap-x-3">
+        <div className="flex h-[calc(100vh-3.5rem)] bg-[#f5f3f0] px-24 py-3 gap-x-3">
             {/* Conversations Sidebar */}
             <div className="bg-white w-1/4 border border-gray-300 flex flex-col rounded-xl">
                 {/* Header */}
-                <div className="p-4 border-b border-gray-200">
-                    <div className="flex justify-between items-center mb-4">
+                <div className="p-4 pb-2 border-b border-gray-200">
+                    <div className="flex justify-between items-center mb-3">
                         <h2 className="text-[24px] page-header">Cuộc trò chuyện</h2>
                         <Button
                             className={"rounded-full bg-[#91114D] text-white"}
                             size="icon"
                             onClick={() => setIsCreateDialogOpen(true)}
                         >
-                            <RiChatNewLine className="h-5 w-5" />
+                            <TbEdit className="!h-5 !w-5" />
                         </Button>
                     </div>
 
@@ -465,19 +602,24 @@ export default function ChatPage() {
                         open={isCreateDialogOpen}
                         onOpenChange={setIsCreateDialogOpen}
                     >
-                        <DialogContent className="max-w-md">
+                        <DialogContent 
+                            className="max-w-md"
+                            onInteractOutside={(event) => {
+                                event.preventDefault()
+                            }}
+                        >
                             <DialogHeader>
-                                <DialogTitle>
+                                <DialogTitle className={'page-header text-[22px]'}>
                                     Tạo cuộc trò chuyện mới
                                 </DialogTitle>
                             </DialogHeader>
 
                             {/* User Search */}
-                            <div className="relative my-2">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <div className="relative my-1">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 " />
                                 <Input
                                     placeholder="Tìm kiếm người dùng..."
-                                    className="pl-10"
+                                    className="pl-10 rounded-full bg-[#F7F7F7]"
                                     value={userSearchTerm}
                                     onChange={(e) =>
                                         setUserSearchTerm(e.target.value)
@@ -492,11 +634,10 @@ export default function ChatPage() {
                                         {filteredUsers.map((user) => (
                                             <div
                                                 key={user.id}
-                                                className={`flex items-center p-3 rounded-lg cursor-pointer ${
-                                                    selectedUser?.id === user.id
-                                                        ? "bg-[#E6DDD5]"
-                                                        : "hover:bg-gray-100"
-                                                }`}
+                                                className={`flex items-center p-3 rounded-lg cursor-pointer ${selectedUser?.id === user.id
+                                                    ? "bg-[#f2ece7]"
+                                                    : "hover:bg-gray-100"
+                                                    }`}
                                                 onClick={() =>
                                                     setSelectedUser(user)
                                                 }
@@ -514,28 +655,32 @@ export default function ChatPage() {
                                                     <div className="font-medium">
                                                         {user.name}
                                                     </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {user.email || "Chưa xác định"}
+                                                    </div>
                                                 </div>
                                                 <div
-                                                    className={`w-3 h-3 rounded-full ${
-                                                        user.isOnline
-                                                            ? "bg-green-500"
-                                                            : "bg-gray-300"
-                                                    }`}
+                                                    className={`w-3 h-3 rounded-full ${user.isOnline
+                                                        ? "bg-green-500"
+                                                        : "bg-gray-300"
+                                                        }`}
                                                 ></div>
                                             </div>
                                         ))}
                                     </>
                                 ) : (
-                                    <div className="mx-auto w-full">
+                                    <div className="flex flex-col items-center w-full">
+                                        <Search className="size-12 mt-3 text-gray-400 p-2 bg-gray-100 rounded-xl" />
                                         <p className="py-3 text-center text-gray-500">Không tìm thấy kết quả phù hợp.</p>
                                     </div>
                                 )}
                             </div>
 
                             {/* Dialog Footer */}
-                            <div className="flex justify-end gap-2 mt-4">
+                            <div className="flex justify-end gap-2 mt-1">
                                 <Button
                                     variant="outline"
+                                    className=" rounded-full"
                                     onClick={() => setIsCreateDialogOpen(false)}
                                 >
                                     Hủy
@@ -543,9 +688,9 @@ export default function ChatPage() {
                                 <Button
                                     onClick={handleCreateConversation}
                                     disabled={!selectedUser}
-                                    className="bg-[#91114D] hover:bg-[#91114D]/90"
+                                    className="bg-[#91114D] hover:bg-[#91114D]/90 rounded-full"
                                 >
-                                    Tạo
+                                    Nhắn tin
                                 </Button>
                             </div>
                         </DialogContent>
@@ -556,28 +701,34 @@ export default function ChatPage() {
                 <div className="flex-1 overflow-y-auto">
                     {filteredConversations.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                            <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 mb-4" />
-                            <h3 className="text-lg font-medium mb-2">
-                                Chưa có cuộc trò chuyện nào
+                            <Search className="size-14 text-gray-400 mb-4 p-2 bg-gray-100 rounded-xl" />
+                            <h3 className="text-base font-semibold ">
+                                {conversations.length === 0
+                                    ? "Chưa có cuộc trò chuyện nào"
+                                    : "Không tìm thấy cuộc trò chuyện"}
                             </h3>
-                            <p className="text-gray-500 mb-4">
-                                Bắt đầu trò chuyện với bạn bè của bạn
+                            <p className="text-sm text-gray-500 mb-4">
+                                {conversations.length === 0
+                                    ? "Bắt đầu trò chuyện với bạn bè của bạn"
+                                    : "Hãy thử tìm kiếm với từ khóa khác"}
                             </p>
-                            <DialogTrigger asChild>
-                                <Button className="bg-[#91114D] hover:bg-[#91114D]/90">
+                            {conversations.length === 0 && (
+                                <Button
+                                    className="bg-[#91114D] hover:bg-[#91114D]/90 rounded-full"
+                                    onClick={() => setIsCreateDialogOpen(true)}
+                                >
                                     Tạo cuộc trò chuyện mới
                                 </Button>
-                            </DialogTrigger>
+                            )}
                         </div>
                     ) : (
                         filteredConversations.map((conversation) => (
                             <div
                                 key={conversation.id}
-                                className={`flex items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                                    selectedConversation?.id === conversation.id
-                                        ? "bg-[#E6DDD5]"
-                                        : ""
-                                }`}
+                                className={`flex items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-[#f5f3f1] ${selectedConversation?.id === conversation.id
+                                    ? "bg-[#f3ede7]"
+                                    : ""
+                                    }`}
                                 onClick={() =>
                                     handleSelectConversation(conversation)
                                 }
@@ -595,11 +746,10 @@ export default function ChatPage() {
                                         </AvatarFallback>
                                     </Avatar>
                                     <div
-                                        className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                                            conversation.isOnline
-                                                ? "bg-green-500"
-                                                : "bg-gray-300"
-                                        }`}
+                                        className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${conversation.isOnline
+                                            ? "bg-green-500"
+                                            : "bg-gray-300"
+                                            }`}
                                     ></div>
                                 </div>
 
@@ -613,7 +763,7 @@ export default function ChatPage() {
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <p className="text-sm text-gray-500 truncate">
+                                        <p className="text-sm text-gray-500 w-[88%] truncate">
                                             {getLastMessage(
                                                 conversation.messages
                                             )}
@@ -640,7 +790,7 @@ export default function ChatPage() {
                         {/* Chat Header */}
                         <div className="bg-white border-b rounded-t-xl border-gray-200 p-4 flex items-center justify-between">
                             <div className="flex items-center">
-                                <Avatar className="h-10 w-10 mr-3">
+                                <Avatar className="h-12 w-12 mr-3">
                                     <AvatarImage
                                         src={selectedConversation.userAvatar}
                                         alt={selectedConversation.userName}
@@ -652,10 +802,10 @@ export default function ChatPage() {
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <h3 className="font-bold">
+                                    <h3 className="!text-lg font-bold">
                                         {selectedConversation.userName}
                                     </h3>
-                                    <p className="text-sm text-gray-500">
+                                    <p className={`text-sm ${selectedConversation.isOnline ? 'text-green-700' : 'text-gray-500'}`}>
                                         {selectedConversation.isOnline
                                             ? "Đang hoạt động"
                                             : "Offline"}
@@ -663,21 +813,15 @@ export default function ChatPage() {
                                 </div>
                             </div>
                             <div className="flex space-x-2">
-                                <Button variant="ghost" size="icon">
-                                    <Phone className="h-5 w-5" />
-                                </Button>
-                                <Button variant="ghost" size="icon">
-                                    <Video className="h-5 w-5" />
-                                </Button>
-                                <Button variant="ghost" size="icon">
-                                    <MoreHorizontal className="h-5 w-5" />
+                                <Button variant="outline" size="icon" className={"rounded-full"}>
+                                    <UserCircle2 className="!h-5 !w-5 text-gray-800" />
                                 </Button>
                             </div>
                         </div>
 
                         {/* Messages Area */}
                         <div
-                            className="flex-1 overflow-y-auto p-4 bg-[#F7F7F7] relative"
+                            className="flex-1 overflow-y-auto p-4 dots-background relative"
                             ref={messagesContainerRef}
                         >
                             {selectedConversation.messages.length === 0 ? (
@@ -689,7 +833,7 @@ export default function ChatPage() {
                                             }
                                             alt={selectedConversation.userName}
                                         />
-                                        <AvatarFallback className="text-2xl">
+                                        <AvatarFallback className="text-2xl bg-black text-white">
                                             {selectedConversation.userName.charAt(
                                                 0
                                             )}
@@ -720,14 +864,13 @@ export default function ChatPage() {
                                         (message) => (
                                             <div
                                                 key={message.id}
-                                                className={`flex mb-4 ${
-                                                    message.senderId === 0
-                                                        ? "justify-end"
-                                                        : "justify-start"
-                                                }`}
+                                                className={`flex mb-4 ${message.senderId === 0
+                                                    ? "justify-end"
+                                                    : "justify-start"
+                                                    }`}
                                             >
                                                 {message.senderId !== 0 && (
-                                                    <Avatar className="h-8 w-8 mr-2 self-end">
+                                                    <Avatar className="h-10 w-10 mr-2 self-end">
                                                         <AvatarImage
                                                             src={
                                                                 selectedConversation.userAvatar
@@ -736,7 +879,7 @@ export default function ChatPage() {
                                                                 selectedConversation.userName
                                                             }
                                                         />
-                                                        <AvatarFallback>
+                                                        <AvatarFallback className={" bg-black text-white"}>
                                                             {selectedConversation.userName.charAt(
                                                                 0
                                                             )}
@@ -744,20 +887,25 @@ export default function ChatPage() {
                                                     </Avatar>
                                                 )}
                                                 <div
-                                                    className={`max-w-xs md:max-w-md lg:max-w-lg rounded-2xl px-4 py-2 ${
-                                                        message.senderId === 0
-                                                            ? "bg-[#91114D] text-white rounded-br-none"
-                                                            : "bg-gray-200 text-gray-800 rounded-bl-none"
-                                                    }`}
-                                                >
-                                                    <p>{message.text}</p>
-                                                    <div
-                                                        className={`text-xs mt-1 flex justify-end ${
-                                                            message.senderId ===
-                                                            0
-                                                                ? "text-[#f0e0d6]"
-                                                                : "text-gray-500"
+                                                    className={` max-w-xs md:max-w-md lg:max-w-lg rounded-2xl px-4 py-2 ${message.senderId === 0
+                                                        ? "bg-[#91114D] text-white rounded-br-none"
+                                                        : "bg-gray-300 text-gray-800 rounded-bl-none"
                                                         }`}
+                                                >
+                                                    {message.text && <p>{message.text}</p>}
+                                                    {message.image && (
+                                                        <img
+                                                            src={message.image}
+                                                            alt="Message attachment"
+                                                            className="mt-2 max-w-full h-32 rounded-lg object-cover"
+                                                        />
+                                                    )}
+                                                    <div
+                                                        className={`text-xs mt-1 flex justify-end ${message.senderId ===
+                                                            0
+                                                            ? "text-[#f0e0d6]"
+                                                            : "text-gray-500"
+                                                            }`}
                                                     >
                                                         {message.timestamp}
                                                         {message.senderId ===
@@ -779,14 +927,39 @@ export default function ChatPage() {
 
                         {/* Message Input */}
                         <div className="bg-white border-t rounded-b-xl border-gray-200 p-4">
+                            {/* Image preview */}
+                            {previewImage && (
+                                <div className="mb-2 relative inline-block">
+                                    <img
+                                        src={previewImage}
+                                        alt="Preview"
+                                        className="h-24 rounded-lg border border-gray-300 object-cover"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute top-1 right-1 bg-red-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs cursor-pointer"
+                                        onClick={removeImagePreview}
+                                    >
+                                        <XIcon />
+                                    </button>
+                                </div>
+                            )}
                             <div className="flex items-center">
                                 <Button
                                     variant="outline"
                                     size="icon"
                                     className={`rounded-full p-1`}
+                                    onClick={() => fileInputRef.current?.click()}
                                 >
                                     <LuImage className="h-6 w-6" />
                                 </Button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleImageSelect}
+                                />
                                 <Input
                                     placeholder={`Nhắn tin cho ${selectedConversation.userName}...`}
                                     className="mx-2 rounded-full "
@@ -798,7 +971,7 @@ export default function ChatPage() {
                                 />
                                 <Button
                                     size="icon"
-                                    disabled={!newMessage.trim()}
+                                    disabled={!newMessage.trim() && !previewImage}
                                     onClick={handleSendMessage}
                                     className="rounded-full bg-[#91114D] hover:bg-[#91114D]/90"
                                 >

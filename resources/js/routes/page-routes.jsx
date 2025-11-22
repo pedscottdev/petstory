@@ -8,6 +8,7 @@ import {
 
 import MainLayout from "../layouts/main-layout";
 import ProtectedRoute from "./protected-routes";
+import AdminProtectedRoute from "./admin-protected-routes";
 
 import AuthLayout from "../pages/user/(auth)/layout";
 import LoginPage from "../pages/user/(auth)/login";
@@ -37,11 +38,17 @@ import AdminUsersPage from "@/pages/admin/users/index";
 import AdminReportsPage from "@/pages/admin/reports/index";
 import AdminDashboardPage from "@/pages/admin/dashboard/index";
 
+// Auth Context Provider
+import { AuthProvider } from "../contexts/AuthContext";
+import { AdminAuthProvider } from "../contexts/AdminAuthContext";
+
 export default function AppRoutes() {
     return (
+        <AuthProvider>
+        <AdminAuthProvider>
         <Routes>
-            {/* Public routes */}
-            <Route element={<MainLayout />}>
+            {/* Protected user routes */}
+            <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
               <Route path="/" element={<NewfeedPage />} />
               <Route path="/pets" element={<PetsPage />} />
               <Route path="/followings" element={<FollowingPage />}/>
@@ -68,7 +75,7 @@ export default function AppRoutes() {
             </Route>
 
             {/* Admin routes with layout */}
-            <Route element={<AdminLayout />}>
+            <Route element={<AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>}>
                 <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 <Route path="/admin/posts" element={<AdminPostsPage />} />
                 <Route path="/admin/users" element={<AdminUsersPage />} />
@@ -78,10 +85,12 @@ export default function AppRoutes() {
             <Route path="/admin/login" element={<AdminLoginPage />} />
 
             {/* Redirect example */}
-            {/* <Route path="/home" element={<Navigate to="/" replace />} /> */
+            {/* <Route path="/home" element={<Navigate to="/" replace />} /> */}
 
-            /* 404 */}
+            {/* 404 */}
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </AdminAuthProvider>
+        </AuthProvider>
     );
 }

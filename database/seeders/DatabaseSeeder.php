@@ -13,15 +13,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-
-        // Seed pets data
+        // Seed default users and pets
         $this->call([
+            DefaultUsersSeeder::class,
             PetSeeder::class,
         ]);
     }

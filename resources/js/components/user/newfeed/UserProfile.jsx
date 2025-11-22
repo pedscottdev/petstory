@@ -2,12 +2,13 @@ import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import defaultAvatar from '../../../../../public/images/special-avatar.png';
 
 export default function UserProfile() {
   // Sample user data
   const user = {
     name: 'Phạm Hoàng Trọng',
-    avatar: '',
+    avatar: defaultAvatar,
     posts: 42,
     followers: 128,
     following: 56,
@@ -15,9 +16,9 @@ export default function UserProfile() {
 
   // Sample pets data
   const pets = [
-    { id: 1, name: 'Buddy', type: 'Mèo Anh lông ngắn', avatar: '' },
-    { id: 2, name: 'Whiskers', type: 'Chó Pitbull', avatar: '' },
-    { id: 3, name: 'Tweety', type: 'Vẹt Nam Mỹ', avatar: '' },
+    { id: 1, name: 'Buddy', type: 'Chó Pitbull', avatar: 'https://images.unsplash.com/photo-1517423568366-8b83523034fd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
+    { id: 2, name: 'Whiskers', type: 'Chó Golden Retriever', avatar: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80' },
+    { id: 3, name: 'Tweety', type: 'Vẹt Nam Mỹ', avatar: 'https://images.unsplash.com/photo-1700048802079-ec47d07f7919?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=907' },
   ];
 
   return (
@@ -51,7 +52,7 @@ export default function UserProfile() {
             </div>
           </div>
         </div>
-        <Button className={'w-fit rounded-full'}>Xem trang cá nhân</Button>
+        <Button className={'w-fit rounded-full bg-[#91114D] text-white'}>Xem trang cá nhân</Button>
       </CardHeader>
 
       <CardContent className={'px-4 w-full'}>
@@ -60,7 +61,7 @@ export default function UserProfile() {
           {pets.map((pet) => (
             <div key={pet.id} className="flex items-center space-x-3">
               <Avatar className={'w-10 h-10'}>
-                <AvatarImage src={pet.avatar} alt={pet.name} />
+                <AvatarImage src={pet.avatar} alt={pet.name} className={'object-cover'} />
                 <AvatarFallback className={'text-white bg-black'}>{pet.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="">

@@ -10,12 +10,12 @@ export default function PersonalInfo() {
   // Mock user data based on the schema provided
   const mockUserData = {
     _id: 'user123',
-    email: 'user@example.com',
+    email: 'nguyenvanan@example.com',
     password: 'hashed_password',
-    first_name: 'John',
-    last_name: 'Doe',
+    first_name: 'Nguyễn',
+    last_name: 'Văn An',
     avatar_url: '',
-    bio: 'Pet lover and enthusiast',
+    bio: 'Yêu thích thú cưng và chia sẻ những khoảnh khắc đáng yêu của chúng',
     is_active: true,
     role: 'user',
     created_at: new Date('2023-01-01'),

@@ -16,6 +16,9 @@
 
 ## 🚀 Cài đặt
 
+Link tải laragon: https://io.bikegremlin.com/35435/laragon-6-php-8-4-install/
+Link tải php 8.3.4: https://1drv.ms/f/c/9cb0cc208e25f479/Eo3gNSnAAyNJuIUVGw2heKgBFazasuXr2XeIKHPnVtHl6Q
+
 ### 1. Clone Repository
 ```bash
 git clone <repository-url>
@@ -34,8 +37,14 @@ npm install
 
 ### 3. Cấu hình Environment
 
-Tải file .env từ folder ENV trên drive:
+Tải file .env từ folder ENV trên drive và paste vào source 
 https://1drv.ms/f/c/9cb0cc208e25f479/Eo3gNSnAAyNJuIUVGw2heKgBFazasuXr2XeIKHPnVtHl6Q
+
+---
+
+Tải về thư mục "uploads" trên drive https://1drv.ms/f/c/9cb0cc208e25f479/Eo3gNSnAAyNJuIUVGw2heKgBFazasuXr2XeIKHPnVtHl6Q và sao chép vào thư mục C:\laragon\www\petstory\public\storage
+
+Nếu đã có thư mục uploads thì xóa bỏ thư mục đang tồn tại và thay bằng thư mục vừa tải xuống trên drive
 ```
 ```
 ### 4. Cấu hình Database (MongoDB)
@@ -60,8 +69,6 @@ php artisan storage:link
 ```bash
 npm run build
 ```
-
-
 ---
 
 ## ▶️ Khởi chạy Ứng dụng

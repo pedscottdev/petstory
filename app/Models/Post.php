@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Post extends Model
 {
+    use HasFactory;
     /**
      * The connection name for the model.
      *
@@ -42,6 +44,13 @@ class Post extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = ['tagged_pets'];
 
     /**
      * Get the author of the post.
@@ -91,5 +100,36 @@ class Post extends Model
     public function comments()
     {
         return $this->hasMany(Comment::class, 'post_id');
+    }
+
+    /**
+     * Get the pets tagged in the post.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function postPets()
+    {
+        return $this->hasMany(PostPet::class, 'post_id');
+    }
+
+    /**
+     * Get the pets tagged in the post with pet details.
+     * Since hasManyThrough doesn't work well with MongoDB,
+     * we manually fetch the pets using a custom accessor.
+     */
+    public function getTaggedPetsAttribute()
+    {
+        // Get pet IDs from post_pets collection
+        $petIds = PostPet::where('post_id', $this->_id ?? $this->id)
+            ->pluck('pet_id')
+            ->toArray();
+        
+        if (empty($petIds)) {
+            return collect([]);
+        }
+        
+        // Fetch pets with details
+        return Pet::whereIn('_id', $petIds)
+            ->get(['_id', 'id', 'name', 'species', 'breed', 'avatar_url']);
     }
 }

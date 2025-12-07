@@ -70,7 +70,7 @@ const PetCard = ({ pet, onLike, onView, onEdit, onDelete, isMyPet = false, isLoa
       <CardHeader className="px-3">
         <div className="relative bg-gradient-to-b from-[#f2eef0] via-[#fffbfd] to-white rounded-xl h-32 pt-12 flex items-center justify-center">
           <Avatar className="w-28 h-28   ">
-            <AvatarImage src={pet.avatar_url} alt={pet.name} />
+            <AvatarImage src={pet.avatar_url} alt={pet.name} className={"object-cover"}/>
             <AvatarFallback className="text-2xl bg-black text-white">
               {pet.name.charAt(0)}
             </AvatarFallback>
@@ -86,11 +86,11 @@ const PetCard = ({ pet, onLike, onView, onEdit, onDelete, isMyPet = false, isLoa
         <CardTitle className="flex justify-between items-center">
           <span className='page-header text-[27px] text-[#6c0937]'>{pet.name}</span>
           <span className="text-sm font-medium bg-[#f2ebe5] px-3 py-1 rounded-full">
-            {pet.species}
+            {pet.species == "dog" ? "Chó" : pet.species == "cat" ? "Mèo" : "Chim"}
           </span>
         </CardTitle>
         <p className="mt-3 h-10 text-sm text-gray-600 line-clamp-2">
-          {pet.description}
+          {pet.description || "Thú cưng này chưa có mô tả"}
         </p>
 
         {/* Pet information grid similar to user stats in followings page */}
@@ -100,7 +100,7 @@ const PetCard = ({ pet, onLike, onView, onEdit, onDelete, isMyPet = false, isLoa
             <div className="text-muted-foreground text-xs">Giống</div>
           </div>
           <div>
-            <div className="font-bold text-[16px]">{pet.age} tuổi</div>
+            <div className="font-bold text-[16px]">{pet.age} tháng</div>
             <div className="text-muted-foreground text-xs">Tuổi</div>
           </div>
           <div>
@@ -115,7 +115,7 @@ const PetCard = ({ pet, onLike, onView, onEdit, onDelete, isMyPet = false, isLoa
             <Button
               variant="outline"
               size="lg"
-              className="w-full rounded-full"
+              className="w-full rounded-full active:scale-90 transition-all duration-200"
               onClick={() => onEdit(pet)}
             >
               <Edit className="h-4 w-4" />
@@ -124,7 +124,7 @@ const PetCard = ({ pet, onLike, onView, onEdit, onDelete, isMyPet = false, isLoa
             <Button
               variant="outline"
               size="lg"
-              className="w-full rounded-full"
+              className="w-full rounded-full active:scale-90 transition-all duration-200"
               onClick={() => onDelete && onDelete(pet._id)}
             >
               <Trash2 className="h-4 w-4" />
@@ -136,7 +136,7 @@ const PetCard = ({ pet, onLike, onView, onEdit, onDelete, isMyPet = false, isLoa
             <Button
               variant="outline"
               size="lg"
-              className="w-full rounded-full"
+              className="w-full rounded-full active:scale-90 transition-all duration-200"
               onClick={() => handleViewGuardian(pet.owner_id)}
             >
               <User className="h-4 w-4" />
@@ -146,7 +146,7 @@ const PetCard = ({ pet, onLike, onView, onEdit, onDelete, isMyPet = false, isLoa
               variant="outline"
               size="lg"
               onClick={() => handleLike(pet._id)}
-              className={`w-full rounded-full active:scale-105 transition-all duration-200 ${pet.isLiked ? "text-red-500 hover:text-red-600" : ""}`}
+              className={`w-full rounded-full active:scale-90 transition-all duration-200 ${pet.isLiked ? "text-red-500 hover:text-red-600" : ""}`}
             >
               {pet.isLiked ? (
                 <Heart className="!h-5 !w-5 fill-current" />

@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import httpClient from '../api/httpClient';
+import axios from 'axios';
 import authApi from '../api/authApi';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true); // loading trạng thái "đang check server"
 
     const STORAGE_KEY = 'auth_user';
+    const SESSION_CHECK_INTERVAL = 5 * 60 * 1000; // Check session every 5 minutes
 
     const saveUserToStorage = (userData) => {
         try {
@@ -37,45 +38,48 @@ export const AuthProvider = ({ children }) => {
 
     const fetchCsrfCookie = async () => {
         try {
-            await httpClient.get('/sanctum/csrf-cookie');
+            // Use axios directly to avoid /api prefix from httpClient
+            await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
+                withCredentials: true,
+                baseURL: ''
+            });
         } catch (error) {
             console.error('Failed to fetch CSRF cookie:', error);
         }
     };
 
-    const checkUserSession = async () => {
+    const checkUserSession = async (silent = false) => {
         try {
             const response = await authApi.getUser();
             if (response?.success && response?.data) {
+                // Session is valid - update user data
                 setUser(response.data);
                 setIsAuthenticated(true);
                 saveUserToStorage(response.data);
+                return true;
             } else {
-                // Nếu API không trả về success, nhưng localStorage vẫn có user
-                // thì giữ user từ localStorage (session có thể vẫn hoạt động)
-                const stored = localStorage.getItem(STORAGE_KEY);
-                if (!stored) {
-                    setUser(null);
-                    setIsAuthenticated(false);
+                // Session is invalid - force logout
+                if (!silent) {
+                    console.warn('Session expired or invalid');
                 }
-            }
-        } catch (error) {
-            // Nếu có lỗi, kiểm tra xem có localStorage không
-            const stored = localStorage.getItem(STORAGE_KEY);
-            
-            // Nếu không có localStorage thì clear user state
-            // Nếu có localStorage thì giữ user (session có thể vẫn đãng nhập)
-            if (!stored) {
                 setUser(null);
                 setIsAuthenticated(false);
+                removeUserFromStorage();
+                return false;
             }
-            
-            // Chỉ log lỗi nếu có localStorage (sở hữu có user nhưng session không hợp lệ)
-            if (stored) {
-                console.error('Session validation failed, but user data exists in localStorage:', error.message);
+        } catch (error) {
+            // On error (401, 500, etc.), session is invalid - force logout
+            if (!silent) {
+                console.error('Session validation failed:', error.message);
             }
+            setUser(null);
+            setIsAuthenticated(false);
+            removeUserFromStorage();
+            return false;
         } finally {
-            setLoading(false);
+            if (!silent) {
+                setLoading(false);
+            }
         }
     };
 
@@ -88,9 +92,25 @@ export const AuthProvider = ({ children }) => {
 
             if (response?.success && response?.data?.user) {
                 const userData = response.data.user;
+                const token = response.data.token;
+
                 setUser(userData);
                 setIsAuthenticated(true);
                 saveUserToStorage(userData);
+
+                // Save token to localStorage for Echo.js broadcasting auth
+                if (token) {
+                    localStorage.setItem('auth_token', token);
+
+                    // Update Echo.js auth headers dynamically
+                    try {
+                        const { updateAuthToken } = await import('../lib/echo.js');
+                        updateAuthToken(token);
+                    } catch (error) {
+                        console.error('Failed to update Echo auth token:', error);
+                    }
+                }
+
                 return { success: true };
             } else {
                 return { success: false, message: response?.message || 'Login failed' };
@@ -106,13 +126,28 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         setLoading(true);
         try {
+            // Attempt to call the logout API
             await authApi.logout();
         } catch (error) {
-            console.error('Logout error:', error);
+            // Even if the API call fails, we still want to ensure the user is logged out
+            console.error('Logout API error (but proceeding with local logout):', error);
         } finally {
+            // Always clear local state regardless of API result
             setUser(null);
             setIsAuthenticated(false);
             removeUserFromStorage();
+
+            // Remove token from localStorage
+            localStorage.removeItem('auth_token');
+
+            // Clear Echo.js auth headers
+            try {
+                const { clearAuthToken } = await import('../lib/echo.js');
+                clearAuthToken();
+            } catch (error) {
+                console.error('Failed to clear Echo auth token:', error);
+            }
+
             setLoading(false);
         }
     };
@@ -142,8 +177,27 @@ export const AuthProvider = ({ children }) => {
                 setLoading(false);
             }
         };
-        
+
         initializeAuth();
+
+        // 3. Set up periodic session validation
+        const sessionCheckInterval = setInterval(async () => {
+            // Only check if user is authenticated
+            if (localStorage.getItem(STORAGE_KEY)) {
+                const isValid = await checkUserSession(true); // silent check
+                if (!isValid) {
+                    // Session expired - redirect to login if not already there
+                    if (window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
+                        window.location.href = '/login';
+                    }
+                }
+            }
+        }, SESSION_CHECK_INTERVAL);
+
+        // Cleanup interval on unmount
+        return () => {
+            clearInterval(sessionCheckInterval);
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -178,5 +232,3 @@ export const AuthProvider = ({ children }) => {
         </AuthContext.Provider>
     );
 };
-
-export default AuthContext;

@@ -33,6 +33,8 @@ Represents a post in the system.
   - Has many PostMultimedia (post_id)
   - Has many PostLikes (post_id)
   - Has many Comments (post_id)
+  - Has many PostPets (post_id)
+  - Has many taggedPets through PostPets (pet_id)
 
 ### PostMultimedia
 Represents multimedia content attached to a post.
@@ -103,18 +105,13 @@ Represents an OTP verification record.
 ### PersonalAccessToken
 Represents a personal access token for API authentication.
 - **Relationships**:
-  - Morphs to User (tokenable_id, tokenable_type)
+  - Belongs to User (tokenable_id)
 
-## Indexes
-
-The following unique indexes are enforced through database migrations:
-
-1. `users.email` - Unique email for each user
-2. `post_likes.user_id + post_likes.post_id` - Composite unique key for post likes
-3. `pet_likes.user_id + pet_likes.pet_id` - Composite unique key for pet likes
-4. `group_members.group_id + group_members.user_id` - Composite unique key for group memberships
-5. `follows.follower_id + follows.following_id` - Composite unique key for follows
-6. `otp_verifications.expires_at` - TTL index for automatic cleanup of expired OTPs
+### PostPet
+Represents the relationship between posts and pets (tagged pets).
+- **Relationships**:
+  - Belongs to Post (post_id)
+  - Belongs to Pet (pet_id)
 
 ## Notes
 

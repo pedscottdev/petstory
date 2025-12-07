@@ -16,7 +16,8 @@ class DatabaseSeeder extends Seeder
         // Seed default users and pets
         $this->call([
             DefaultUsersSeeder::class,
-            PetSeeder::class,
+            GroupSeeder::class,
+            SocialSampleDataSeeder::class,
         ]);
     }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,8 @@ import {
   MessageCircle,
   MoreHorizontal,
   Send,
-  Reply
+  Reply,
+  AlertCircle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -18,6 +19,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { IoHeartCircle } from "react-icons/io5";
 import { RiPokerHeartsLine } from "react-icons/ri";
 import { BiSolidMessage, BiSolidMessageRoundedDots, BiSolidMessageSquareDots } from 'react-icons/bi';
@@ -41,11 +52,17 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from '@/components/ui/carousel';
+import * as postApi from '@/api/postApi';
+import { useAuth } from '@/contexts/AuthContext';
+import { getImageUrl } from '@/utils/imageUtils';
+import ButtonLoader from '@/components/ui/ButtonLoader';
 
-export default function PostItem({ post }) {
+export default function PostItem({ post, onPostDeleted, onPostUpdated }) {
   const navigate = useNavigate();
-  const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(post.likes);
+  const { user: currentUser } = useAuth();
+  const [liked, setLiked] = useState(post.is_liked || false);
+  const [likesCount, setLikesCount] = useState(post.likes_count || post.likes || 0);
+  const [commentCount, setCommentCount] = useState(post.comment_counts || post.comments_count || post.comments || 0);
   const [comment, setComment] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
@@ -53,79 +70,120 @@ export default function PostItem({ post }) {
   const [isPetDialogOpen, setIsPetDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteCommentDialogOpen, setIsDeleteCommentDialogOpen] = useState(false);
+  const [deleteCommentId, setDeleteCommentId] = useState(null);
   const [reportReason, setReportReason] = useState('');
   const [customReportReason, setCustomReportReason] = useState('');
   const [editedPostContent, setEditedPostContent] = useState(post.content);
   const [editedTaggedPets, setEditedTaggedPets] = useState(post.pets || []);
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      user: {
-        name: 'Triều Dương',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop'
-      },
-      content: 'Bài viết rất hay!',
-      time: '2 giờ trước',
-      likes: 5,
-      replies: [
-        {
-          id: 11,
-          user: {
-            name: 'Cao Hải Lan',
-            avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop'
-          },
-          content: 'Mình cũng nghĩ vậy',
-          time: '1 giờ trước',
-          likes: 2,
-          replies: []
-        }
-      ]
-    },
-    {
-      id: 2,
-      user: {
-        name: 'Lê Văn Linh',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop'
-      },
-      content: 'Cảm ơn bạn đã chia sẻ',
-      time: '1 giờ trước',
-      likes: 3,
-      replies: []
-    }
-  ]);
+  const [comments, setComments] = useState([]);
+  const [isLoadingLike, setIsLoadingLike] = useState(false);
+  const [isLoadingComment, setIsLoadingComment] = useState(false);
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [isLoadingDelete, setIsLoadingDelete] = useState(false);
+  const [isLoadingReport, setIsLoadingReport] = useState(false);
+  const [isLoadingDeleteComment, setIsLoadingDeleteComment] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [hasLoadedComments, setHasLoadedComments] = useState(false);
 
-  const handleLike = () => {
-    if (liked) {
-      setLikesCount(likesCount - 1);
-    } else {
-      setLikesCount(likesCount + 1);
+  // Check if current user is the post owner
+  const isPostOwner = currentUser && post.user && currentUser.id === post.user.id;
+
+  // Check if post content has been modified
+  const hasContentChanged = editedPostContent.trim() !== (post.content || '').trim();
+
+  const handleLike = async () => {
+    if (isLoadingLike) return;
+
+    // Toggle UI state immediately for better UX
+    const newLikedState = !liked;
+    const likeCountAdjustment = newLikedState ? 1 : -1;
+
+    // Optimistically update UI
+    setLiked(newLikedState);
+    setLikesCount(prev => Math.max(0, prev + likeCountAdjustment));
+
+    try {
+      setIsLoadingLike(true);
+      const postId = post.id || post._id;
+      const response = await postApi.togglePostLike(postId);
+
+      if (response.success) {
+        const newLikeCount = response.data.like_count;
+        const isNowLiked = response.data.action === 'liked';
+
+        // Update with actual server response
+        setLiked(isNowLiked);
+        setLikesCount(newLikeCount);
+        toast.success(response.message || 'Thành công');
+
+        // Update post data immediately with is_liked attribute
+        if (onPostUpdated) {
+          onPostUpdated({
+            ...post,
+            is_liked: isNowLiked,
+            likes_count: newLikeCount,
+            likes: newLikeCount
+          });
+        }
+      } else {
+        // Revert optimistic updates on error
+        setLiked(!newLikedState);
+        setLikesCount(prev => Math.max(0, prev - likeCountAdjustment));
+        toast.error(response.message || 'Lỗi khi cập nhật like');
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      // Revert optimistic updates on error
+      setLiked(!newLikedState);
+      setLikesCount(prev => Math.max(0, prev - likeCountAdjustment));
+      toast.error('Lỗi khi cập nhật like');
+    } finally {
+      setIsLoadingLike(false);
     }
-    setLiked(!liked);
   };
 
-  const handleCommentSubmit = (e) => {
+  const handleCommentSubmit = async (e) => {
     e.preventDefault();
-    if (comment.trim()) {
-      // Create new comment object
-      const newComment = {
-        id: comments.length + 1,
-        user: { name: 'Bạn', avatar: '' }, // In a real app, this would be the current user
-        content: comment,
-        time: 'vừa xong',
-        likes: 0,
-        replies: []
-      };
+    if (!comment.trim() || isLoadingComment) return;
 
-      // Add new comment to the comments array
-      setComments([...comments, newComment]);
+    try {
+      setIsLoadingComment(true);
+      const postId = post.id || post._id;
+      const response = await postApi.addComment(postId, comment);
 
-      // Clear the comment input
-      setComment('');
+      if (response.success) {
+        const newComment = response.data;
+        setComments([...comments, newComment]);
+        setComment('');
+        setShowComments(true);
 
-      // Show comments if they were hidden
-      setShowComments(true);
+        // Update comment count
+        const newCommentCount = commentCount + 1;
+        setCommentCount(newCommentCount);
+
+        // Update parent component with new comment count
+        if (onPostUpdated) {
+          onPostUpdated({
+            ...post,
+            comments_count: newCommentCount,
+            comment_counts: newCommentCount,
+            comments: newCommentCount
+          });
+        }
+
+        toast.success('Thêm bình luận thành công');
+      } else {
+        toast.error(response.message || 'Lỗi khi thêm bình luận');
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Lỗi khi thêm bình luận');
+    } finally {
+      setIsLoadingComment(false);
     }
   };
 
@@ -136,11 +194,161 @@ export default function PostItem({ post }) {
       console.log('Reply submitted:', replyText, 'to comment:', parentId);
       setReplyText('');
       setReplyingTo(null);
+      toast.success('Phản hồi thành công');
     }
   };
 
-  const toggleComments = () => {
-    setShowComments(!showComments);
+  const handleReportPost = async () => {
+    if (!reportReason || (reportReason === 'other' && !customReportReason.trim())) {
+      toast.error('Vui lòng chọn lý do báo cáo');
+      return;
+    }
+
+    if (isLoadingReport) return;
+
+    try {
+      setIsLoadingReport(true);
+      const reason = reportReason === 'other' ? customReportReason : reportReason;
+      const postId = post.id || post._id;
+      const response = await postApi.reportPost(postId, reason);
+
+      if (response.success) {
+        toast.success('Báo cáo đã được gửi thành công');
+        setIsReportDialogOpen(false);
+        setReportReason('');
+        setCustomReportReason('');
+      } else {
+        toast.error(response.message || 'Lỗi khi gửi báo cáo');
+      }
+    } catch (error) {
+      console.error('Error reporting post:', error);
+      toast.error('Lỗi khi gửi báo cáo');
+    } finally {
+      setIsLoadingReport(false);
+    }
+  };
+
+  const handleEditPost = async () => {
+    if (!editedPostContent.trim() || isLoadingEdit) return;
+
+    try {
+      setIsLoadingEdit(true);
+      const postId = post.id || post._id;
+      const response = await postApi.updatePost(postId, {
+        content: editedPostContent,
+        tagged_pets: editedTaggedPets.map(pet => pet.id || pet._id)
+      });
+
+      if (response.success) {
+        toast.success('Bài viết đã được cập nhật thành công');
+        setIsEditDialogOpen(false);
+        if (onPostUpdated) {
+          onPostUpdated(response.data);
+        }
+      } else {
+        toast.error(response.message || 'Lỗi khi cập nhật bài viết');
+      }
+    } catch (error) {
+      console.error('Error editing post:', error);
+      toast.error('Lỗi khi cập nhật bài viết');
+    } finally {
+      setIsLoadingEdit(false);
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (isLoadingDelete) return;
+
+    try {
+      setIsLoadingDelete(true);
+      const postId = post.id || post._id;
+      const response = await postApi.deletePost(postId);
+
+      if (response.success) {
+        toast.success('Bài viết đã được xóa thành công');
+        setIsDeleteDialogOpen(false);
+        if (onPostDeleted) {
+          onPostDeleted(postId);
+        }
+      } else {
+        toast.error(response.message || 'Lỗi khi xóa bài viết');
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      toast.error('Lỗi khi xóa bài viết');
+    } finally {
+      setIsLoadingDelete(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      setIsLoadingDeleteComment(true);
+      const response = await postApi.deleteComment(commentId);
+
+      if (response.success) {
+        setComments(comments.filter(c => c.id !== commentId && c._id !== commentId));
+
+        // Update comment count
+        const newCommentCount = Math.max(0, commentCount - 1);
+        setCommentCount(newCommentCount);
+
+        // Update parent component with new comment count
+        if (onPostUpdated) {
+          onPostUpdated({
+            ...post,
+            comments_count: newCommentCount,
+            comment_counts: newCommentCount,
+            comments: newCommentCount
+          });
+        }
+
+        toast.success('Xóa bình luận thành công');
+        setIsDeleteCommentDialogOpen(false);
+        setDeleteCommentId(null);
+      } else {
+        toast.error(response.message || 'Lỗi khi xóa bình luận');
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast.error('Lỗi khi xóa bình luận');
+    } finally {
+      setIsLoadingDeleteComment(false);
+    }
+  };
+
+  const toggleComments = async () => {
+    // If showing comments, just toggle visibility
+    if (showComments) {
+      setShowComments(false);
+      return;
+    }
+
+    // If not showing and haven't loaded yet, fetch comments
+    if (!hasLoadedComments && !isLoadingComments) {
+      try {
+        setIsLoadingComments(true);
+        const response = await postApi.getPostComments(post.id || post._id);
+        if (response.success && Array.isArray(response.data)) {
+          setComments(response.data);
+        } else {
+          setComments([]);
+        }
+        setHasLoadedComments(true);
+        setShowComments(true);
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+        setComments([]);
+        toast.error('Lỗi khi tải bình luận');
+        setHasLoadedComments(true);
+        setShowComments(true);
+      } finally {
+        setIsLoadingComments(false);
+      }
+    } else {
+      // If already loaded, just show
+      setShowComments(true);
+    }
   };
 
   const handleReplyClick = (commentId) => {
@@ -148,54 +356,72 @@ export default function PostItem({ post }) {
     setReplyText('');
   };
 
-  const renderComment = (comment, isNested = false) => (
-    <div key={comment.id} className={`flex gap-3 ${isNested ? 'ml-10 mt-2' : 'mt-2'}`}>
-      <Avatar className="!w-9 !h-9">
-        <AvatarImage src={comment.user.avatar} alt={comment.user.name} />
-        <AvatarFallback className="bg-black text-white text-xs">
-          {comment.user.name.charAt(0)}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex-1">
-        <div className="bg-[#ececec] rounded-2xl px-3 py-2">
-          <p className="font-semibold text-sm">{comment.user.name}</p>
-          <p className="text-sm">{comment.content}</p>
-        </div>
-        <div className="flex items-center gap-3 mt-1 text-xs text-gray-600">
-          <button className="hover:underline">Xóa bình luận</button>
-          <button
-            className="hover:underline"
-            onClick={() => handleReplyClick(comment.id)}
-          >
-            Phản hồi
-          </button>
-          <span>{comment.time}</span>
-        </div>
+  const renderComment = (comment, isNested = false) => {
+    if (!comment) return null;
 
-        {replyingTo === comment.id && (
-          <form onSubmit={(e) => handleReplySubmit(e, comment.id)} className="flex gap-2 mt-2">
-            <Input
-              placeholder="Viết phản hồi..."
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              className="shadow-none border-[#e1d6ca] flex-1 rounded-full h-8 bg-white text-sm"
-            />
-            <Button
-              type="submit"
-              className="h-8 rounded-full bg-[#91114D] hover:bg-[#91114D]/85"
-              size="sm"
-              disabled={!replyText.trim()}
+    const isCommentOwner = currentUser && comment.user && currentUser.id === comment.user.id;
+    const user = comment.user || {};
+    const avatarUrl = getImageUrl(user.avatar || user.avatar_url);
+
+    return (
+      <div key={comment.id || comment._id} className={`flex gap-3 ${isNested ? 'ml-10 mt-2' : 'mt-2'}`}>
+        <Avatar className="!w-9 !h-9">
+          <AvatarImage src={avatarUrl} alt={user.name || 'User'} />
+          <AvatarFallback className="bg-black text-white text-xs">
+            {user.name ? user.name.charAt(0) : '?'}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1">
+          <div className="bg-[#ececec] rounded-2xl px-3 py-2">
+            <p className="font-semibold text-sm">{user.name || 'Anonymous'}</p>
+            <p className="text-sm">{comment.content}</p>
+          </div>
+          <div className="flex items-center gap-3 mt-1 text-xs text-gray-600">
+            {isCommentOwner && (
+              <button
+                className="hover:underline hover:cursor-pointer text-red-500"
+                onClick={() => {
+                  setDeleteCommentId(comment.id || comment._id);
+                  setIsDeleteCommentDialogOpen(true);
+                }}
+              >
+                Xóa bình luận
+              </button>
+            )}
+            <button
+              className="hover:underline hover:cursor-pointer"
+              onClick={() => handleReplyClick(comment.id || comment._id)}
             >
-              <Send className="h-3 w-3" />
-            </Button>
-          </form>
-        )}
+              Phản hồi
+            </button>
+            <span>{comment.created_at ? new Date(comment.created_at).toLocaleDateString('vi-VN') : comment.time}</span>
+          </div>
 
-        {/* Render replies (max 2 levels) */}
-        {comment.replies && comment.replies.map(reply => renderComment(reply, true))}
+          {replyingTo === (comment.id || comment._id) && (
+            <form onSubmit={(e) => handleReplySubmit(e, comment.id || comment._id)} className="flex gap-2 mt-2">
+              <Input
+                placeholder="Viết phản hồi..."
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                className="shadow-none border-[#e1d6ca] flex-1 rounded-full h-8 bg-white text-sm"
+              />
+              <Button
+                type="submit"
+                className="h-8 rounded-full bg-[#91114D] hover:bg-[#91114D]/85"
+                size="sm"
+                disabled={!replyText.trim()}
+              >
+                <Send className="h-3 w-3" />
+              </Button>
+            </form>
+          )}
+
+          {/* Render replies (max 1 level) */}
+          {comment.replies && Array.isArray(comment.replies) && comment.replies.map(reply => renderComment(reply, true))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Determine the number of pets to display
   const petCount = Array.isArray(post.pets) ? post.pets.length : post.pets || 0;
@@ -225,35 +451,8 @@ export default function PostItem({ post }) {
     navigate(`/profile/${userId}`);
   };
 
-  // Function to handle reporting a post
-  const handleReportPost = () => {
-    const reason = reportReason === 'other' ? customReportReason : reportReason;
-    console.log('Post reported:', { postId: post.id, reason });
-    toast.success('Báo cáo đã được gửi thành công');
-    setIsReportDialogOpen(false);
-    setReportReason('');
-    setCustomReportReason('');
-  };
-
-  // Function to handle editing a post
-  const handleEditPost = () => {
-    console.log('Post edited:', {
-      postId: post.id,
-      content: editedPostContent,
-      taggedPets: editedTaggedPets
-    });
-    toast.success('Bài viết đã được cập nhật thành công');
-    setIsEditDialogOpen(false);
-  };
-
-  // Function to handle hiding a post
-  const handleHidePost = () => {
-    console.log('Post hidden:', post.id);
-    toast.success('Bài viết đã được ẩn thành công');
-  };
-
   return (
-    <Card className="w-full mb-4 bg-white !shadow-none gap-2 py-4">
+    <Card className="w-full mb-4 bg-white !shadow-none gap-2 py-4 border border-gray-300">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4">
         <div className="flex items-center gap-3">
           <Avatar className={"!w-10 !h-10"}>
@@ -279,16 +478,21 @@ export default function PostItem({ post }) {
               <MoreHorizontal className="!h-5 !w-5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
-              <span className="font-medium ">Chỉnh sửa bài viết</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleHidePost}>
-              <span className="font-medium ">Ẩn bài viết</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsReportDialogOpen(true)}>
-              <span className="font-medium text-red-500">Báo cáo bài viết</span>
-            </DropdownMenuItem>
+          <DropdownMenuContent >
+            {isPostOwner ? (
+              <>
+                <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+                  <span className="font-medium ">Chỉnh sửa bài viết</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)}>
+                  <span className="font-medium text-red-500">Xóa bài viết</span>
+                </DropdownMenuItem>
+              </>
+            ) : (
+              <DropdownMenuItem onClick={() => setIsReportDialogOpen(true)}>
+                <span className="font-medium text-red-500">Báo cáo bài viết</span>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
@@ -408,8 +612,9 @@ export default function PostItem({ post }) {
         <div className="flex items-centerjustify-start gap-x-6 w-full text-[15px]">
           <div className="flex items-center gap-1 text-gray-600">
             <button
-              className="group transition-all active:scale-105 duration-300 text-[15px] hover:cursor-pointer"
+              className="group transition-all active:scale-105 duration-300 text-[15px] hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleLike}
+              disabled={isLoadingLike}
             >
               <AiFillHeart className={`group-active:scale-180 duration-300 transition-all !h-6 !w-6  ${liked ? 'text-[#EF4142]' : 'text-gray-400'}`} />
             </button>
@@ -421,10 +626,10 @@ export default function PostItem({ post }) {
             onClick={toggleComments}
           >
             <AiFillMessage className="h-5.5 w-5.5 text-gray-400" />
-            <p className='font-medium'>{post.comments}</p>
+            <p className='font-medium'>{commentCount}</p>
           </button>
           {/* All pets */}
-          <Dialog open={isPetDialogOpen} onOpenChange={setIsPetDialogOpen}>
+          <Dialog open={isPetDialogOpen} onOpenChange={setIsPetDialogOpen} >
             <DialogTrigger asChild>
               <button
                 className="hover:cursor-pointer flex items-center gap-1 text-gray-600"
@@ -435,7 +640,7 @@ export default function PostItem({ post }) {
                 <p className='font-medium'>{petCount}</p>
               </button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => e.preventDefault()}>
               <DialogHeader>
                 <DialogTitle className={"page-header text-[20px]"}>Thú cưng được gắn thẻ</DialogTitle>
               </DialogHeader>
@@ -471,12 +676,13 @@ export default function PostItem({ post }) {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             className="shadow-none border-[#e1d6ca] flex-1 rounded-full h-9 bg-[#F7F7F7]"
+            disabled={isLoadingComment}
           />
           <Button
             type="submit"
             className={"w-9 h-9 rounded-full bg-[#91114D] hover:bg-[#91114D]/85"}
             size="sm"
-            disabled={!comment.trim()}
+            disabled={!comment.trim() || isLoadingComment}
           >
             <Send className="h-4 w-4" />
           </Button>
@@ -484,17 +690,34 @@ export default function PostItem({ post }) {
 
         {/* Comments section - initially hidden, shown when user clicks comment button */}
         {showComments && (
-          <div className="w-full border-t border-[#e1d6ca] pt-1">
-            {comments.map(comment => renderComment(comment))}
+          <div className="w-full border-t border-[#e1d6ca] pt-3">
+            {isLoadingComments ? (
+              <div className="text-center py-6 text-gray-500 text-sm">
+                <div className="inline-block animate-spin">
+                  <MessageCircle className="h-6 w-6" />
+                </div>
+                <p className="mt-2">Đang tải bình luận...</p>
+              </div>
+            ) : comments && comments.length > 0 ? (
+              comments.map(comment => renderComment(comment))
+            ) : (
+              <div className="text-center py-6 text-gray-600 text-sm">
+                <MessageCircle className="h-7 w-7 mx-auto mb-2 opacity-30" />
+                <div>
+                  <p className="font-semibold text-lg text-gray-600">Chưa có bình luận nào.</p>
+                  <p className=" text-gray-600">Hãy viết bình luận cho bài viết này</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardFooter>
 
       {/* Report Dialog */}
       <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle className={"page-header text-[20px]"}>Báo cáo bài viết</DialogTitle>
+            <DialogTitle className={"page-header text-[22px]"}>Báo cáo bài viết</DialogTitle>
           </DialogHeader>
           <div className="py-0">
             <div className="space-y-3">
@@ -547,7 +770,7 @@ export default function PostItem({ post }) {
                     onChange={(e) => setReportReason(e.target.value)}
                     className="form-radio"
                   />
-                  <span>Ngôn từ thù ghét / quấy rối</span>
+                  <span>Nội dung thù ghét / quấy rối</span>
                 </label>
               </div>
               <div>
@@ -581,16 +804,22 @@ export default function PostItem({ post }) {
                 setReportReason('');
                 setCustomReportReason('');
               }}
+              className="rounded-full"
               variant="outline"
             >
               Hủy
             </Button>
             <Button
               onClick={handleReportPost}
-              disabled={!reportReason || (reportReason === 'other' && !customReportReason.trim())}
-              className="bg-[#91114D] text-white hover:bg-[#91114D]/85"
+              disabled={!reportReason || (reportReason === 'other' && !customReportReason.trim()) || isLoadingReport}
+              className="bg-[#91114D] text-white hover:bg-[#91114D]/85 rounded-full disabled:opacity-50"
             >
-              Gửi báo cáo
+              {isLoadingReport ? (
+                <div className="flex items-center">
+                  <ButtonLoader className="h-4 w-4 mr-2 text-white" />
+                  <span>Đang thực hiện</span>
+                </div>
+              ) : 'Gửi báo cáo'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -598,7 +827,7 @@ export default function PostItem({ post }) {
 
       {/* Image Carousel Dialog */}
       <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
-        <DialogContent  className="sm:max-w-[90vw] md:max-w-[70vw] lg:max-w-[60vw] p-0 overflow-hidden backdrop:blur">
+        <DialogContent className="sm:max-w-[90vw] md:max-w-[70vw] lg:max-w-[60vw] p-0 overflow-hidden backdrop:blur" onInteractOutside={(e) => e.preventDefault()}>
           <Carousel
             opts={{
               align: "start",
@@ -626,7 +855,7 @@ export default function PostItem({ post }) {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px]" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className={"page-header text-[20px]"}>Chỉnh sửa bài viết</DialogTitle>
           </DialogHeader>
@@ -669,18 +898,78 @@ export default function PostItem({ post }) {
             <Button
               onClick={() => setIsEditDialogOpen(false)}
               variant="outline"
+              className="rounded-full"
             >
               Hủy
             </Button>
             <Button
               onClick={handleEditPost}
-              className="bg-[#91114D] text-white hover:bg-[#91114D]/85"
+              disabled={isLoadingEdit || !editedPostContent.trim() || !hasContentChanged}
+              className="bg-[#91114D] text-white hover:bg-[#91114D]/85 rounded-full disabled:opacity-50"
             >
-              Lưu thay đổi
+              {isLoadingEdit ? (
+                <div className="flex items-center">
+                  <ButtonLoader className="h-4 w-4 mr-2 text-white" />
+                  <span>Đang thực hiện</span>
+                </div>
+              ) : 'Lưu thay đổi'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Delete Post Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent onInteractOutside={(e) => e.preventDefault()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="page-header text-[22px]">Xóa bài viết</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa bài viết này? Hành động này không thể được hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full">Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePost}
+              disabled={isLoadingDelete}
+              className="bg-red-700 hover:bg-red-600/80 text-white disabled:opacity-50 rounded-full"
+            >
+              {isLoadingDelete ? (
+                <span className="flex items-center justify-center">
+                  <ButtonLoader className="-ml-1 mr-3 h-5 w-5" />
+                  Đang xóa
+                </span>
+              ) : 'Xác nhận'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Comment Confirmation Dialog */}
+      <AlertDialog open={isDeleteCommentDialogOpen} onOpenChange={setIsDeleteCommentDialogOpen}>
+        <AlertDialogContent onInteractOutside={(e) => e.preventDefault()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa bình luận</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa bình luận này? Hành động này không thể được hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteCommentId && handleDeleteComment(deleteCommentId)}
+              disabled={isLoadingDeleteComment}
+              className="bg-red-700 hover:bg-red-600/80 text-white disabled:opacity-50 rounded-full"
+            >
+              {isLoadingDeleteComment ? (
+                <div className="flex items-center">
+                  <ButtonLoader className="h-4 w-4 mr-2 text-white" />
+                  <span>Đang thực hiện</span>
+                </div>
+              ) : 'Xóa'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

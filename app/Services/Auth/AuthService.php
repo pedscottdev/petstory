@@ -5,8 +5,11 @@ namespace App\Services\Auth;
 use App\Models\User;
 use App\Models\OtpVerification;
 use App\Models\PersonalAccessToken;
+use App\Events\UserOnlineStatusChanged;
+use App\Traits\TracksUserOnlineStatus;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
@@ -37,12 +40,27 @@ class AuthService
             ]);
         }
 
+        // Check if user account is active
+        if (!$user->is_active) {
+            throw ValidationException::withMessages([
+                'email' => ['Tài khoản của bạn đã bị vô hiệu hóa.'],
+            ]);
+        }
+
         // Login user vào session (Sanctum session-based auth)
         Auth::login($user);
 
+        // Tạo token cho broadcasting authentication
+        // Token này sẽ được sử dụng bởi Echo.js để authenticate với private channels
+        $token = $user->createToken('broadcasting_token')->plainTextToken;
+
+        // Broadcast user online status
+        TracksUserOnlineStatus::markUserOnline($user->id);
+        event(new UserOnlineStatusChanged($user, true));
+
         return [
             'user' => $user,
-            'token' => null
+            'token' => $token
         ];
     }
 
@@ -73,9 +91,17 @@ class AuthService
         // Login user vào session (Sanctum session-based auth)
         Auth::login($user);
 
+        // Tạo token cho broadcasting authentication
+        // Token này sẽ được sử dụng bởi Echo.js để authenticate với private channels
+        $token = $user->createToken('broadcasting_token')->plainTextToken;
+
+        // Broadcast user online status
+        TracksUserOnlineStatus::markUserOnline($user->id);
+        event(new UserOnlineStatusChanged($user, true));
+
         return [
             'user' => $user,
-            'token' => null
+            'token' => $token
         ];
     }
 
@@ -104,7 +130,7 @@ class AuthService
         $data['avatar_url'] = '/images/default-avatar.jpg';
         $data['role'] = 'user'; // Default role is user
         $data['is_active'] = true;
-        
+
         return User::create($data);
     }
 
@@ -116,10 +142,38 @@ class AuthService
      */
     public function logout(User $user): void
     {
-        // For session-based auth with Sanctum, we logout from session
-        Auth::logout();
-        // Also revoke all tokens for the user (if using API tokens)
-        $user->tokens()->delete();
+        try {
+            // Broadcast user offline status before logout
+            if ($user && $user->id) {
+                TracksUserOnlineStatus::markUserOffline($user->id);
+                event(new UserOnlineStatusChanged($user, false));
+            }
+            
+            // For session-based auth with Sanctum, we logout from session
+            if (Auth::check()) {
+                Auth::logout();
+                
+                // If using session driver, invalidate session
+                if (session()->isStarted()) {
+                    session()->invalidate();
+                    session()->regenerateToken();
+                }
+            }
+            
+            // Also revoke all tokens for the user (if using API tokens)
+            if ($user && $user->tokens) {
+                $user->tokens()->delete();
+            }
+        } catch (\Exception $e) {
+            // Even if there's an error, we still want to ensure the user is logged out
+            // Log the error but don't throw it
+            Log::error('Logout error: ' . $e->getMessage());
+            
+            // Force clear session data
+            if (session()->isStarted()) {
+                session()->flush();
+            }
+        }
     }
 
     /**
@@ -139,10 +193,10 @@ class AuthService
 
         // Generate 6-digit OTP
         $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        
+
         // Hash the OTP for storage
         $otpHash = Hash::make($otp);
-        
+
         // Set expiration time (5 minutes)
         $expiresAt = Carbon::now()->addMinutes(5);
 

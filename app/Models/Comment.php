@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Comment extends Model
 {
+    use HasFactory;
     /**
      * The connection name for the model.
      *
@@ -58,6 +60,16 @@ class Comment extends Model
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function author()
+    {
+        return $this->belongsTo(User::class, 'author_id');
+    }
+
+    /**
+     * Get the user who created the comment (alias for author).
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function user()
     {
         return $this->belongsTo(User::class, 'author_id');
     }

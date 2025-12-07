@@ -33,7 +33,7 @@ class DefaultUsersSeeder extends Seeder
             'email' => 'user@petstory.com',
             'password' => Hash::make('Goodday@123'),
             'avatar_url' => '/images/special-avatar.png',
-            'bio' => 'I love my pets!',
+            'bio' => 'Thế giới có thể ồn ào, nhưng về nhà ôm tụi nhỏ là thấy bình yên. 🐾❤️',
             'is_active' => true,
             'role' => 'user',
         ]);
@@ -41,35 +41,36 @@ class DefaultUsersSeeder extends Seeder
         $pets = [
             [
                 'owner_id' => $regularUser->id,
-                'name' => 'Buddy',
-                'species' => 'Dog',
+                'name' => 'Băng',
+                'species' => 'dog',
                 'breed' => 'Golden Retriever',
                 'gender' => 'male',
                 'age' => 3,
-                'description' => 'A friendly golden retriever who loves to play fetch.',
+                'description' => 'Một chú chó Golden Retriever thân thiện, rất thích chơi ném bóng.',
                 'avatar_url' => 'https://images.unsplash.com/photo-1633722715463-d30f4f325e24?w=400&h=400&fit=crop',
             ],
             [
                 'owner_id' => $regularUser->id,
-                'name' => 'Whiskers',
-                'species' => 'Cat',
-                'breed' => 'Persian',
+                'name' => 'Miu Miu',
+                'species' => 'cat',
+                'breed' => 'Mèo Ba Tư',
                 'gender' => 'female',
                 'age' => 2,
-                'description' => 'A calm and affectionate Persian cat who enjoys quiet spaces.',
+                'description' => 'Một cô mèo Ba Tư hiền lành và tình cảm, thích những không gian yên tĩnh.',
                 'avatar_url' => 'https://images.unsplash.com/photo-1595433707802-6b2626ef1c91?w=400&h=400&fit=crop',
             ],
             [
                 'owner_id' => $regularUser->id,
-                'name' => 'Rocky',
-                'species' => 'Dog',
-                'breed' => 'German Shepherd',
+                'name' => 'Vàng',
+                'species' => 'dog',
+                'breed' => 'Chó chăn cừu Đức',
                 'gender' => 'male',
                 'age' => 4,
-                'description' => 'A loyal German Shepherd who is great with children.',
+                'description' => 'Một chú chó chăn cừu Đức trung thành và rất thân thiện với trẻ em.',
                 'avatar_url' => 'https://images.unsplash.com/photo-1568572933382-74d440642117?w=400&h=400&fit=crop',
             ],
         ];
+
         foreach ($pets as $petData) {
             Pet::create($petData);
         }

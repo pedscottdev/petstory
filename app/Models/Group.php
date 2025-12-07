@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Group extends Model
 {
+    use HasFactory;
     /**
      * The connection name for the model.
      *
@@ -29,6 +31,7 @@ class Group extends Model
         'creator_id',
         'name',
         'avatarUrl',
+        'category',
         'description',
     ];
 
@@ -39,6 +42,7 @@ class Group extends Model
      */
     protected $casts = [
         'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     /**

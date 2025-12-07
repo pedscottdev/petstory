@@ -1,26 +1,35 @@
 import axios from "axios";
 
-// Create an axios instance with default configuration
 const httpClient = axios.create({
-    baseURL: "/api", // Base URL for all API requests
-    timeout: 10000, // Request timeout
+    baseURL: "/api",
+    timeout: 30000, // Increased to 30 seconds
     headers: {
-        "Content-Type": "application/json",
         Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest", 
     },
-    withCredentials: true, // Required for Laravel Sanctum session-based authentication
+    withCredentials: true,
 });
 
-// Request interceptor
+// Request interceptor - Fetch CSRF token before every authenticated request
 httpClient.interceptors.request.use(
-    (config) => {
-        // For Laravel Sanctum, we don't need to manually add Authorization header
-        // The session is handled via cookies
+    async (config) => {
+        // Fetch CSRF cookie if not present
+        if (!document.cookie.includes('XSRF-TOKEN')) {
+            try {
+                await axios.get('/sanctum/csrf-cookie', {
+                    withCredentials: true
+                });
+            } catch (error) {
+                console.error('Failed to fetch CSRF cookie:', error);
+            }
+        }
+        
+        // Touch session to keep it alive on each request (extends session lifetime)
+        // This is automatic with Laravel session middleware when withCredentials is true
+        
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
 // Response interceptor

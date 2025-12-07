@@ -146,6 +146,21 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the conversations this user is part of.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function conversations()
+    {
+        return $this->belongsToMany(
+            Conversation::class,
+            'conversation_user',
+            'user_id',
+            'conversation_id'
+        )->withTimestamps();
+    }
+
+    /**
      * Get the messages sent by the user.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany

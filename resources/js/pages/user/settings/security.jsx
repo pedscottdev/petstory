@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { changePassword } from '@/api/userApi';
+import httpClient from '@/api/httpClient';
 
 export default function Security() {
   // State for password change section
@@ -20,6 +22,9 @@ export default function Security() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // State for form submission
+  const [submitting, setSubmitting] = useState(false);
 
   // Handle password changes
   const handlePasswordChange = (field, value) => {
@@ -42,8 +47,18 @@ export default function Security() {
   };
 
   // Save password
-  const handleSavePassword = () => {
+  const handleSavePassword = async () => {
     // Validation
+    if (!passwordData.current_password.trim()) {
+      toast.error('Vui lòng nhập mật khẩu hiện tại');
+      return;
+    }
+
+    if (!passwordData.new_password.trim()) {
+      toast.error('Vui lòng nhập mật khẩu mới');
+      return;
+    }
+
     if (passwordData.new_password !== passwordData.confirm_password) {
       toast.error('Mật khẩu xác nhận không khớp');
       return;
@@ -54,15 +69,35 @@ export default function Security() {
       return;
     }
 
-    // In a real app, this would be an API call
-    console.log('Changing password:', passwordData);
-    setPasswordData({
-      current_password: '',
-      new_password: '',
-      confirm_password: ''
-    });
-    setPasswordModified(false);
-    toast.success('Đã đổi mật khẩu thành công!');
+    setSubmitting(true);
+    try {
+      // Ensure CSRF cookie is fetched before making authenticated request
+      await httpClient.get('/sanctum/csrf-cookie');
+
+      const response = await changePassword(
+        passwordData.current_password,
+        passwordData.new_password,
+        passwordData.confirm_password
+      );
+
+      if (response?.success) {
+        setPasswordData({
+          current_password: '',
+          new_password: '',
+          confirm_password: ''
+        });
+        setPasswordModified(false);
+        toast.success('Đã đổi mật khẩu thành công!');
+      } else {
+        toast.error(response?.message || 'Lỗi khi đổi mật khẩu');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Lỗi khi đổi mật khẩu';
+      toast.error(errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -156,14 +191,22 @@ export default function Security() {
         <Button
           variant="outline"
           onClick={handleResetPassword}
+          disabled={submitting}
         >
           Hủy bỏ
         </Button>
         <Button
           onClick={handleSavePassword}
-          disabled={!passwordModified}
+          disabled={!passwordModified || submitting}
         >
-          Lưu lại
+          {submitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Đang lưu...
+            </>
+          ) : (
+            'Lưu lại'
+          )}
         </Button>
       </div>
     </div>

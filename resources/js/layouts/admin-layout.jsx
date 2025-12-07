@@ -13,16 +13,17 @@ import { TiWarning } from "react-icons/ti";
 
 // Import AlertDialog components
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import ButtonLoader from "@/components/ui/ButtonLoader";
 
 export default function AdminLayout() {
     const location = useLocation();
@@ -75,15 +76,15 @@ export default function AdminLayout() {
         <div className="flex h-screen bg-gray-50">
             {/* Sidebar with dark background and light text/icons */}
             <div className="flex flex-col justify-between h-full w-64 bg-[#13171E] text-white py-8">
-                
+
                 <nav className="">
-                  <div className="px-6 pb-8">
-                    <img
-                        src={AdminLogo}
-                        alt="Admin Logo"
-                        className="h-9 w-auto"
-                    />
-                </div>
+                    <div className="px-6 pb-8">
+                        <img
+                            src={AdminLogo}
+                            alt="Admin Logo"
+                            className="h-9 w-auto"
+                        />
+                    </div>
                     <div className="space-y-1 px-4">
                         {navItems.map((item) => {
                             const Icon = item.icon;
@@ -95,11 +96,10 @@ export default function AdminLayout() {
                                         variant={
                                             isActive ? "secondary" : "ghost"
                                         }
-                                        className={`w-full justify-start h-10 rounded-lg mb-1 ${
-                                            isActive
-                                                ? "bg-white text-gray-900 hover:bg-gray-100"
-                                                : "hover:bg-gray-800 text-gray-300 hover:text-white"
-                                        }`}
+                                        className={`w-full justify-start h-10 rounded-lg mb-1 ${isActive
+                                            ? "bg-white text-gray-900 hover:bg-gray-100"
+                                            : "hover:bg-gray-800 text-gray-300 hover:text-white"
+                                            }`}
                                     >
                                         <Icon className="mr-4 !h-5 !w-5" />
                                         <span className="text-[15px] font-semibold">
@@ -130,12 +130,18 @@ export default function AdminLayout() {
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel disabled={isLoggingOut}>Hủy</AlertDialogCancel>
-                                <AlertDialogAction 
-                                    onClick={handleLogout} 
+                                <AlertDialogCancel className="rounded-full" disabled={isLoggingOut}>Hủy</AlertDialogCancel>
+                                <AlertDialogAction
+                                    className="bg-red-700 hover:bg-red-600/80 text-white disabled:opacity-50 rounded-full"
+                                    onClick={handleLogout}
                                     disabled={isLoggingOut}
                                 >
-                                    {isLoggingOut ? "Đang đăng xuất..." : "Xác nhận"}
+                                    {isLoggingOut ? (
+                                        <span className="flex items-center justify-center">
+                                            <ButtonLoader className="-ml-1 mr-3 h-5 w-5" />
+                                            Đang đăng xuất
+                                        </span>
+                                    ) : "Xác nhận"}
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>

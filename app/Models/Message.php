@@ -26,10 +26,13 @@ class Message extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'conversation_id',
         'sender_id',
         'receiver_id',
         'content',
+        'image_url',
         'status',
+        'is_read',
     ];
 
     /**
@@ -39,7 +42,18 @@ class Message extends Model
      */
     protected $casts = [
         'created_at' => 'datetime',
+        'is_read' => 'boolean',
     ];
+
+    /**
+     * Get the conversation this message belongs to.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function conversation()
+    {
+        return $this->belongsTo(Conversation::class, 'conversation_id');
+    }
 
     /**
      * Get the sender of the message.
@@ -52,7 +66,7 @@ class Message extends Model
     }
 
     /**
-     * Get the receiver of the message.
+     * Get the receiver of the message (for direct messages).
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */

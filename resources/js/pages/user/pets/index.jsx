@@ -3,6 +3,9 @@ import { Plus, Heart, HeartOff, Edit, Trash2, Calendar, MapPin, Phone, Search, F
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/AuthContext';
+import * as petApi from '@/api/petApi';
+import useImageUpload from '@/hooks/useImageUpload';
 import {
   Dialog,
   DialogContent,
@@ -42,172 +45,30 @@ import { toast } from 'sonner';
 import PetCard from '@/components/user/newfeed/PetCard';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Mock data for pets
-const mockPets = [
-  {
-    _id: '1',
-    owner_id: 'user1',
-    name: 'Buddy',
-    species: 'Dog',
-    breed: 'Golden Retriever',
-    gender: 'male',
-    age: 3,
-    description: 'Chó golden retriever thân thiện thích chơi đồ chơi và đi dạo trong công viên.',
-    avatar_url: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=400&fit=crop',
-    created_at: new Date('2023-01-15'),
-    updated_at: new Date('2023-06-20'),
-    isLiked: false,
-    likeCount: 12,
-    isOwner: true
-  },
-  {
-    _id: '2',
-    owner_id: 'user2',
-    name: 'Whiskers',
-    species: 'Cat',
-    breed: 'Tabby',
-    gender: 'female',
-    age: 2,
-    description: 'Mèo tabby nghịch ngợm thích những nơi có nắng và săn đồ chơi chuột.',
-    avatar_url: 'https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=400&h=400&fit=crop',
-    created_at: new Date('2023-03-10'),
-    updated_at: new Date('2023-07-15'),
-    isLiked: true,
-    likeCount: 8,
-    isOwner: false
-  },
-  {
-    _id: '3',
-    owner_id: 'user3',
-    name: 'Charlie',
-    species: 'Bird',
-    breed: 'Parakeet',
-    gender: 'male',
-    age: 1,
-    description: 'Chim parakeet đầy màu sắc thích hót và bắt chước âm thanh.',
-    avatar_url: 'https://images.unsplash.com/photo-1590486129015-ef1e3c280b9e?w=400&h=400&fit=crop',
-    created_at: new Date('2023-05-22'),
-    updated_at: new Date('2023-08-30'),
-    isLiked: false,
-    likeCount: 5,
-    isOwner: false
-  },
-  {
-    _id: '4',
-    owner_id: 'user1',
-    name: 'Luna',
-    species: 'Cat',
-    breed: 'Persian',
-    gender: 'female',
-    age: 4,
-    description: 'Mèo Persian dịu dàng thích nằm nghỉ và được chải lông.',
-    avatar_url: 'https://images.unsplash.com/photo-1533738363-b7f9aef128ce?w=400&h=400&fit=crop',
-    created_at: new Date('2022-11-05'),
-    updated_at: new Date('2023-09-12'),
-    isLiked: false,
-    likeCount: 15,
-    isOwner: true
-  },
-  {
-    _id: '5',
-    owner_id: 'user4',
-    name: 'Rocky',
-    species: 'Dog',
-    breed: 'German',
-    gender: 'male',
-    age: 5,
-    description: 'Chó German Shepherd trung thành xuất sắc trong huấn luyện tuân thủ.',
-    avatar_url: 'https://images.unsplash.com/photo-1517423568366-8b83523034fd?w=400&h=400&fit=crop',
-    created_at: new Date('2023-02-18'),
-    updated_at: new Date('2023-10-01'),
-    isLiked: true,
-    likeCount: 22,
-    isOwner: false
-  },
-  {
-    _id: '6',
-    owner_id: 'user5',
-    name: 'Coco',
-    species: 'Bird',
-    breed: 'Cockatiel',
-    gender: 'female',
-    age: 2,
-    description: 'Chim cockatiel xinh đẹp thích hót những giai điệu.',
-    avatar_url: 'https://images.unsplash.com/photo-1551085254-e96b210db58a?w=400&h=400&fit=crop',
-    created_at: new Date('2023-04-12'),
-    updated_at: new Date('2023-11-05'),
-    isLiked: false,
-    likeCount: 7,
-    isOwner: false
-  },
-  {
-    _id: '7',
-    owner_id: 'user6',
-    name: 'Max',
-    species: 'Dog',
-    breed: 'Bulldog',
-    gender: 'male',
-    age: 1,
-    description: 'Chó con Bulldog năng động thích chơi và khám phá.',
-    avatar_url: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&h=400&fit=crop',
-    created_at: new Date('2023-08-20'),
-    updated_at: new Date('2023-12-01'),
-    isLiked: true,
-    likeCount: 9,
-    isOwner: false
-  },
-  {
-    _id: '8',
-    owner_id: 'user7',
-    name: 'Bella',
-    species: 'Dog',
-    breed: 'Labrador',
-    gender: 'female',
-    age: 4,
-    description: 'Chó Labrador thân thiện thích bơi lội và chơi với trẻ em.',
-    avatar_url: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=400&fit=crop',
-    created_at: new Date('2023-03-22'),
-    updated_at: new Date('2023-12-15'),
-    isLiked: false,
-    likeCount: 18,
-    isOwner: false
-  },
-  {
-    _id: '9',
-    owner_id: 'user8',
-    name: 'Mittens',
-    species: 'Cat',
-    breed: 'Siamese',
-    gender: 'female',
-    age: 3,
-    description: 'Mèo Siamese thanh lịch với đôi mắt xanh biếc và tính cách thích kêu.',
-    avatar_url: 'https://images.unsplash.com/photo-1519052537078-e6302a4968d4?w=400&h=400&fit=crop',
-    created_at: new Date('2023-01-30'),
-    updated_at: new Date('2023-12-20'),
-    isLiked: true,
-    likeCount: 14,
-    isOwner: false
-  },
-  {
-    _id: '10',
-    owner_id: 'user9',
-    name: 'Tweety',
-    species: 'Bird',
-    breed: 'Canary',
-    gender: 'male',
-    age: 2,
-    description: 'Chim canary vui vẻ với bộ lông vàng rực và tiếng hót du dương.',
-    avatar_url: 'https://images.unsplash.com/photo-1598755257130-c2aaca1f08c1?w=400&h=400&fit=crop',
-    created_at: new Date('2023-07-10'),
-    updated_at: new Date('2023-12-25'),
-    isLiked: false,
-    likeCount: 6,
-    isOwner: false
-  }
-];
+// Transform API pet data to component format
+const transformPetData = (apiPet, currentUserId) => {
+  return {
+    _id: apiPet._id,
+    owner_id: apiPet.owner_id,
+    name: apiPet.name,
+    species: apiPet.species,
+    breed: apiPet.breed || '',
+    gender: apiPet.gender,
+    age: apiPet.age || 0,
+    description: apiPet.description || '',
+    avatar_url: apiPet.avatar_url || '',
+    created_at: new Date(apiPet.created_at),
+    updated_at: new Date(apiPet.updated_at),
+    isLiked: apiPet.is_liked || false,
+    likeCount: apiPet.like_count || 0,
+    isOwner: apiPet.owner_id === currentUserId
+  };
+};
 
 export default function PetsPage() {
-  const [pets, setPets] = useState(mockPets);
+  const { user } = useAuth();
+  const { uploadPetAvatar, isLoading: imageUploading } = useImageUpload();
+  const [pets, setPets] = useState([]);
   const [selectedPet, setSelectedPet] = useState(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -249,8 +110,15 @@ export default function PetsPage() {
   });
 
   // Loading states
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('explore');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Lazy loading states
+  const [displayedExplorePets, setDisplayedExplorePets] = useState([]);
+  const [exploreLoadCount, setExploreLoadCount] = useState(9); // Initial load count
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const observerTarget = useRef(null);
 
   // Filter pets by ownership
   const myPets = pets.filter(pet => pet.isOwner);
@@ -289,18 +157,46 @@ export default function PetsPage() {
     return species;
   };
 
+  // Convert base64 to File
+  const base64ToFile = (base64String, filename) => {
+    const arr = base64String.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
   // Handle like/unlike pet
-  const handleLikePet = (petId) => {
-    setPets(pets.map(pet => {
-      if (pet._id === petId) {
-        return {
-          ...pet,
-          isLiked: !pet.isLiked,
-          likeCount: pet.isLiked ? pet.likeCount - 1 : pet.likeCount + 1
-        };
+  const handleLikePet = async (petId) => {
+    try {
+      // Validate petId before making API call
+      if (!petId) {
+        console.error('Pet ID is undefined');
+        toast.error('Không thể thích thú cưng: ID không hợp lệ');
+        return;
       }
-      return pet;
-    }));
+
+      const response = await petApi.togglePetLike(petId);
+      if (response.success) {
+        setPets(pets.map(pet => {
+          if (pet._id === petId) {
+            return {
+              ...pet,
+              isLiked: !pet.isLiked,
+              likeCount: pet.isLiked ? pet.likeCount - 1 : pet.likeCount + 1
+            };
+          }
+          return pet;
+        }));
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      toast.error('Không thể cập nhật trạng thái thích');
+    }
   };
 
   // Validate pet data
@@ -327,7 +223,7 @@ export default function PetsPage() {
   };
 
   // Handle create pet
-  const handleCreatePet = () => {
+  const handleCreatePet = async () => {
     const errors = validatePetData(newPet);
 
     if (errors.length > 0) {
@@ -343,35 +239,68 @@ export default function PetsPage() {
       return;
     }
 
-    const pet = {
-      _id: `${pets.length + 1}`,
-      owner_id: 'user1', // Current user
-      ...newPet,
-      age: parseInt(newPet.age),
-      created_at: new Date(),
-      updated_at: new Date(),
-      isLiked: false,
-      likeCount: 0,
-      isOwner: true
-    };
+    setIsSubmitting(true);
+    try {
+      const petData = {
+        name: newPet.name,
+        species: newPet.species,
+        breed: newPet.breed,
+        gender: newPet.gender,
+        age: parseInt(newPet.age),
+        description: newPet.description,
+        avatar_url: ''
+      };
 
-    setPets([pet, ...pets]);
-    setNewPet({
-      name: '',
-      species: '',
-      breed: '',
-      gender: '',
-      age: '',
-      description: '',
-      avatar_url: ''
-    });
-    setNewPetAvatarPreview(null);
-    setIsCreateDialogOpen(false);
-    toast.success('Đã thêm thú cưng thành công');
+      // Create pet first without avatar
+      const response = await petApi.createPet(petData);
+      if (response.success) {
+        let finalPet = response.data;
+
+        // Upload avatar if provided
+        if (newPet.avatar_url && newPet.avatar_url.startsWith('data:')) {
+          try {
+            const file = base64ToFile(newPet.avatar_url, `pet-${finalPet._id}.jpg`);
+            const uploadResult = await uploadPetAvatar(file, finalPet._id);
+            if (uploadResult && uploadResult.path) {
+              // Update pet with new avatar URL
+              const updateResponse = await petApi.updatePet(finalPet._id, { avatar_url: uploadResult.path });
+              if (updateResponse.success) {
+                finalPet = updateResponse.data;
+              }
+            }
+          } catch (uploadError) {
+            console.error('Error uploading avatar:', uploadError);
+            toast.error('Thêm thú cưng thành công nhưng không thể tải lên ảnh đại diện');
+          }
+        }
+
+        const transformedPet = transformPetData(finalPet, user?.id);
+        setPets([transformedPet, ...pets]);
+        setNewPet({
+          name: '',
+          species: '',
+          breed: '',
+          gender: '',
+          age: '',
+          description: '',
+          avatar_url: ''
+        });
+        setNewPetAvatarPreview(null);
+        setIsCreateDialogOpen(false);
+        toast.success('Đã thêm thú cưng thành công');
+      }
+    } catch (error) {
+      console.error('Error creating pet:', error);
+      toast.error('Không thể tạo thú cưng', {
+        description: error.response?.data?.message || 'Vui lòng thử lại'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Handle update pet
-  const handleUpdatePet = () => {
+  const handleUpdatePet = async () => {
     const errors = validatePetData(editingPet);
 
     if (errors.length > 0) {
@@ -387,21 +316,56 @@ export default function PetsPage() {
       return;
     }
 
-    setPets(pets.map(pet =>
-      pet._id === editingPet._id
-        ? {
-          ...pet,
-          ...editingPet,
-          age: parseInt(editingPet.age),
-          updated_at: new Date()
-        }
-        : pet
-    ));
+    setIsSubmitting(true);
+    try {
+      let avatarUrl = editingPet.avatar_url;
 
-    setIsEditDialogOpen(false);
-    setEditingPet(null);
-    setEditingPetAvatarPreview(null);
-    toast.success('Đã cập nhật thông tin thú cưng thành công');
+      // Upload avatar if it's a new file (base64)
+      if (editingPet.avatar_url && editingPet.avatar_url.startsWith('data:')) {
+        try {
+          const file = base64ToFile(editingPet.avatar_url, `pet-${editingPet._id}.jpg`);
+          const uploadResult = await uploadPetAvatar(file, editingPet._id);
+          if (uploadResult && uploadResult.path) {
+            avatarUrl = uploadResult.path;
+          }
+        } catch (uploadError) {
+          console.error('Error uploading avatar:', uploadError);
+          toast.error('Không thể tải lên ảnh đại diện mới');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      const petData = {
+        name: editingPet.name,
+        species: editingPet.species,
+        breed: editingPet.breed,
+        gender: editingPet.gender,
+        age: parseInt(editingPet.age),
+        description: editingPet.description,
+        avatar_url: avatarUrl
+      };
+
+      const response = await petApi.updatePet(editingPet._id, petData);
+      if (response.success) {
+        const transformedPet = transformPetData(response.data, user?.id);
+        setPets(pets.map(pet =>
+          pet._id === editingPet._id ? transformedPet : pet
+        ));
+
+        setIsEditDialogOpen(false);
+        setEditingPet(null);
+        setEditingPetAvatarPreview(null);
+        toast.success('Đã cập nhật thông tin thú cưng thành công');
+      }
+    } catch (error) {
+      console.error('Error updating pet:', error);
+      toast.error('Không thể cập nhật thú cưng', {
+        description: error.response?.data?.message || 'Vui lòng thử lại'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Handle avatar upload for new pet
@@ -488,13 +452,23 @@ export default function PetsPage() {
   };
 
   // Confirm delete pet
-  const confirmDeletePet = () => {
+  const confirmDeletePet = async () => {
     if (petToDelete) {
-      setPets(pets.filter(pet => pet._id !== petToDelete._id));
-      if (selectedPet && selectedPet._id === petToDelete._id) {
-        setSelectedPet(null);
+      try {
+        const response = await petApi.deletePet(petToDelete._id);
+        if (response.success) {
+          setPets(pets.filter(pet => pet._id !== petToDelete._id));
+          if (selectedPet && selectedPet._id === petToDelete._id) {
+            setSelectedPet(null);
+          }
+          toast.success('Đã xóa thú cưng');
+        }
+      } catch (error) {
+        console.error('Error deleting pet:', error);
+        toast.error('Không thể xóa thú cưng', {
+          description: error.response?.data?.message || 'Vui lòng thử lại'
+        });
       }
-      toast.success('Đã xóa thú cưng');
     }
     setIsDeleteDialogOpen(false);
     setPetToDelete(null);
@@ -548,51 +522,132 @@ export default function PetsPage() {
     return applyFilters(otherPets, exploreFilters);
   };
 
+  // Get currently displayed explore pets (with lazy loading)
+  const getCurrentlyDisplayedExplorePets = () => {
+    const filtered = getFilteredExplorePets();
+    return filtered.slice(0, exploreLoadCount);
+  };
+
+  // Check if there are more pets to load
+  const hasMoreExplorePets = () => {
+    return getFilteredExplorePets().length > exploreLoadCount;
+  };
+
+  // Load more pets
+  const loadMoreExplorePets = () => {
+    if (!isLoadingMore && hasMoreExplorePets()) {
+      setIsLoadingMore(true);
+      setTimeout(() => {
+        setExploreLoadCount(prev => prev + 6); // Load 6 more pets
+        setIsLoadingMore(false);
+      }, 500); // Simulate loading delay
+    }
+  };
+
   // Get filtered pets for my pets tab
   const getFilteredMyPets = () => {
     return applyFilters(myPets, myPetsFilters);
   };
 
-  // Simulate loading when switching tabs
-  const simulateLoading = (tab) => {
-    // clear any existing timeout to avoid overlap
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current);
-    }
-
-    setIsLoading(true);
+  // Handle tab change
+  const handleTabChange = (tab) => {
     setActiveTab(tab);
-    // Simulate API call delay
-    loadingTimeoutRef.current = setTimeout(() => {
-      setIsLoading(false);
-      loadingTimeoutRef.current = null;
-    }, 800);
+    if (tab === 'explore') {
+      // Reset load count when switching to explore tab
+      setExploreLoadCount(9);
+    }
   };
 
   // Ref to hold loading timeout so we can clear on unmount or new calls
   const loadingTimeoutRef = useRef(null);
 
-  // Simulate initial loading on first mount
+  // Fetch pets from API on mount
   useEffect(() => {
-    // Start with loading state to mimic fetching data
-    setIsLoading(true);
-    loadingTimeoutRef.current = setTimeout(() => {
-      setIsLoading(false);
-      loadingTimeoutRef.current = null;
-    }, 800);
+    const fetchPets = async () => {
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const response = await petApi.getPets(1, 100); // Fetch all pets
+        if (response.success && response.data) {
+          const transformedPets = response.data.map(pet => {
+            const transformed = transformPetData(pet, user.id);
+            return transformed;
+          });
+          setPets(transformedPets);
+        } else {
+          // Handle case where response is successful but has no data
+          setPets([]);
+        }
+      } catch (error) {
+        console.error('Error fetching pets:', error);
+        if (error.code === 'ECONNABORTED') {
+          toast.error('Yêu cầu quá lâu', {
+            description: 'Không thể tải danh sách thú cưng. Vui lòng kiểm tra kết nối.'
+          });
+        } else if (error.response?.status === 401) {
+          // Unauthorized - user might need to login again
+          toast.error('Phiên làm việc đã hết hạn', {
+            description: 'Vui lòng đăng nhập lại'
+          });
+        } else {
+          toast.error('Không thể tải danh sách thú cưng', {
+            description: 'Vui lòng thử lại sau'
+          });
+        }
+        setPets([]); // Set empty array on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPets();
 
     return () => {
       if (loadingTimeoutRef.current) {
         clearTimeout(loadingTimeoutRef.current);
       }
     };
-  }, []);
+  }, [user?.id]);
+
+  // Set up intersection observer for lazy loading
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && activeTab === 'explore') {
+          loadMoreExplorePets();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [activeTab, exploreLoadCount, isLoadingMore, pets, exploreFilters]);
+
+  // Reset load count when filters change
+  useEffect(() => {
+    if (activeTab === 'explore') {
+      setExploreLoadCount(9);
+    }
+  }, [exploreFilters]);
 
   // Define species options
   const speciesOptions = [
-    { value: 'Dog', label: 'Chó' },
-    { value: 'Cat', label: 'Mèo' },
-    { value: 'Bird', label: 'Chim' }
+    { value: 'dog', label: 'Chó' },
+    { value: 'cat', label: 'Mèo' },
+    { value: 'bird', label: 'Chim' }
   ];
 
   // Skeleton loading component for pet cards
@@ -784,8 +839,9 @@ export default function PetsPage() {
                 <Button
                   onClick={handleCreatePet}
                   className="bg-[#91114D] hover:bg-[#91114D]/90 rounded-full"
+                  disabled={isSubmitting || imageUploading}
                 >
-                  Thêm thú cưng
+                  {isSubmitting || imageUploading ? 'Đang xử lý...' : 'Thêm thú cưng'}
                 </Button>
               </div>
             </DialogContent>
@@ -793,7 +849,7 @@ export default function PetsPage() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="explore" className="mb-4" onValueChange={simulateLoading}>
+        <Tabs defaultValue="explore" className="mb-4" onValueChange={handleTabChange}>
           <TabsList className="bg-[#E6E4E0] rounded-lg">
             <TabsTrigger
               value="explore"
@@ -813,7 +869,7 @@ export default function PetsPage() {
           <TabsContent value="explore" className="mt-2">
             {/* Filters - Cập nhật thiết kế giống trang groups */}
             <div className="mb-6 bg-white p-3 px-4 rounded-lg border border-gray-300">
-              <div className="flex items-end grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className=" items-end grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div className='col-span-1'>
                   <label className="text-sm font-medium mb-1 block">Tên thú cưng</label>
                   <Input
@@ -831,7 +887,7 @@ export default function PetsPage() {
                     <SelectContent>
                       <SelectItem value="all">Tất cả loài</SelectItem>
                       {getUniqueSpecies().map(species => (
-                        <SelectItem key={species} value={species}>{species}</SelectItem>
+                        <SelectItem key={species} value={species}>{species == "dog" ? "Chó" : species == "cat" ? "Mèo" : "Chim"}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -864,7 +920,7 @@ export default function PetsPage() {
             </div>
 
             {/* Pets Grid */}
-            {isLoading && activeTab === 'explore' ? (
+            {isLoading ? (
               <PetCardSkeleton />
             ) : getFilteredExplorePets().length === 0 ? (
               <div className="text-center py-12 ">
@@ -884,18 +940,38 @@ export default function PetsPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {getFilteredExplorePets().map((pet) => (
-                  <PetCard
-                    key={pet._id}
-                    pet={pet}
-                    onLike={handleLikePet}
-                    onView={handleViewPet}
-                    onDelete={handleDeletePet}
-                    isMyPet={false}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {getCurrentlyDisplayedExplorePets().map((pet) => (
+                    <PetCard
+                      key={pet._id}
+                      pet={pet}
+                      onLike={handleLikePet}
+                      onView={handleViewPet}
+                      onDelete={handleDeletePet}
+                      isMyPet={false}
+                    />
+                  ))}
+                </div>
+
+                {/* Loading more indicator and observer target */}
+                {hasMoreExplorePets() && (
+                  <div ref={observerTarget} className="w-full py-8">
+                    {isLoadingMore && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[1, 2, 3].map((item) => (
+                          <PetCard key={`loading-${item}`} isLoading={true} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Show total count */}
+                <div className="text-center text-sm text-gray-500 mt-4">
+                  Hiển thị {getCurrentlyDisplayedExplorePets().length} / {getFilteredExplorePets().length} thú cưng
+                </div>
+              </>
             )}
           </TabsContent>
 
@@ -903,7 +979,7 @@ export default function PetsPage() {
           <TabsContent value="myPets" className="mt-2">
             {/* Filters - Cập nhật thiết kế giống trang groups */}
             <div className="mb-6 bg-white p-3 px-4 rounded-lg border border-gray-300">
-              <div className="flex items-end grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className=" items-end grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div className='col-span-1'>
                   <label className="text-sm font-medium mb-1 block">Tên thú cưng</label>
                   <Input
@@ -954,7 +1030,7 @@ export default function PetsPage() {
             </div>
 
             {/* Pets Grid */}
-            {isLoading && activeTab === 'myPets' ? (
+            {isLoading ? (
               <PetCardSkeleton />
             ) : getFilteredMyPets().length === 0 ? (
               <div className="text-center py-12 ">
@@ -1110,8 +1186,8 @@ export default function PetsPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={cancelDeletePet}>Hủy</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDeletePet} className="bg-red-600 hover:bg-red-700">Xóa</AlertDialogAction>
+              <AlertDialogCancel className="rounded-full" onClick={cancelDeletePet}>Hủy</AlertDialogCancel>
+              <AlertDialogAction className="bg-red-700 hover:bg-red-600/80 text-white disabled:opacity-50 rounded-full" onClick={confirmDeletePet}>Xóa</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -1280,8 +1356,9 @@ export default function PetsPage() {
                   <Button
                     onClick={handleUpdatePet}
                     className="bg-[#91114D] hover:bg-[#91114D]/90"
+                    disabled={isSubmitting || imageUploading}
                   >
-                    Cập nhật
+                    {isSubmitting || imageUploading ? 'Đang xử lý...' : 'Cập nhật'}
                   </Button>
 
                 </div>

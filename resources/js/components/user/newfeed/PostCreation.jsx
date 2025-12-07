@@ -4,10 +4,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Smile, Image as ImageIcon, Tag, XIcon } from 'lucide-react';
 import { LuDog, LuImagePlus } from "react-icons/lu";
+import { useAuth } from '@/contexts/AuthContext';
 
 const PostCreation = forwardRef(({ onPostCreated, onOpenDialog }, ref) => {
+  const { user } = useAuth();
   const [postContent, setPostContent] = useState('');
-  const [username, setUsername] = useState('Trọng');
+  const username = user?.first_name || 'Bạn';
 
   // Expose method to parent component
   useImperativeHandle(ref, () => ({
@@ -35,10 +37,10 @@ const PostCreation = forwardRef(({ onPostCreated, onOpenDialog }, ref) => {
               onChange={(e) => setPostContent(e.target.value)}
               onClick={handleOpenDialog}
             />
-            
+
             <div className="flex justify-between items-center">
               <div className="flex gap-2 mt-1">
-                <Button 
+                <Button
                   variant="outline"
                   className="rounded-full border-none shadow-none !px-3 text-black"
                   onClick={handleOpenDialog}
@@ -46,18 +48,18 @@ const PostCreation = forwardRef(({ onPostCreated, onOpenDialog }, ref) => {
                   <LuDog className="!w-5.5 !h-5.5 text-pink-600" />
                   Thêm thú cưng
                 </Button>
-                
-                <Button 
-                  variant={'outline'} 
+
+                <Button
+                  variant={'outline'}
                   className="border-none shadow-none rounded-full !px-3 text-black"
                   onClick={handleOpenDialog}
                 >
                   <LuImagePlus className="!w-5.5 !h-5.5 text-blue-600" />
                   Thêm ảnh
                 </Button>
-                
-                <Button 
-                  variant={'outline'} 
+
+                <Button
+                  variant={'outline'}
                   className="rounded-full border-none shadow-none !px-3 text-black"
                   onClick={handleOpenDialog}
                 >
@@ -65,7 +67,7 @@ const PostCreation = forwardRef(({ onPostCreated, onOpenDialog }, ref) => {
                   Emoji
                 </Button>
               </div>
-              
+
             </div>
           </div>
         </div>
@@ -73,5 +75,7 @@ const PostCreation = forwardRef(({ onPostCreated, onOpenDialog }, ref) => {
     </Card>
   );
 });
+
+PostCreation.displayName = 'PostCreation';
 
 export default PostCreation;

@@ -1,201 +1,384 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import MainLayout from "@/layouts/main-layout";
 import {
-    PostCreation,
-    PostFilter,
-    PostItem,
-    PeopleYouMayKnow,
-    UserProfile,
+  PostCreation,
+  PostFilter,
+  PostItem,
+  PostSkeleton,
+  PeopleYouMayKnow,
+  UserProfile,
 } from "@/components/user/newfeed";
 import { FloatingCreateButton } from "@/components/user/newfeed";
+import { getNewfeedData } from "@/api/userApi";
+import { getFilteredFeed } from "@/api/postApi";
+import { toast } from "sonner";
+import { getImageUrl, getAvatarUrl } from "@/utils/imageUtils";
 
 export default function NewfeedPage() {
-    const floatingButtonRef = useRef(null);
-    
-    // Sample posts data
-    const [posts] = useState([
-        {
-            id: 1,
-            user: { 
-                name: "Nguyễn Văn An", 
-                avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop" 
-            },
-            time: "2 giờ trước",
-            content:
-                "Hôm nay mình đưa cún Buddy đi công viên. Cậu ấy vui chơi với những chú chó khác rất vui!",
-            pets: [
-                { id: 101, name: "Buddy", breed: "Labrador" }
-            ],
-            likes: 24,
-            comments: 5,
-            images: [
-                "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800",
-                "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800"
-            ]
-        },
-        {
-            id: 2,
-            user: { 
-                name: "Trần Thị Bình", 
-                avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" 
-            },
-            time: "5 giờ trước",
-            content:
-                "Whiskers đã khỏe hơn nhiều sau khi đi khám bác sĩ thú y. Cảm ơn mọi người đã quan tâm!",
-            pets: [
-                { id: 102, name: "Whiskers", breed: "Mèo Anh lông ngắn" },
-                { id: 103, name: "Mittens", breed: "Mèo Ba Tư" }
-            ],
-            likes: 42,
-            comments: 8,
-            images: [
-                "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800",
-                "https://images.unsplash.com/photo-1477884213360-7e9d7dcc1e48?w=800",
-                "https://images.unsplash.com/photo-1561037404-61cd46aa615b?w=800"
-            ]
-        },
-        {
-            id: 3,
-            user: { 
-                name: "Lê Hoàng Dũng", 
-                avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" 
-            },
-            time: "1 ngày trước",
-            content:
-                "Vừa nhận nuôi một chú cún con! Hãy gặp Charlie, thành viên mới nhất trong gia đình chúng mình.",
-            pets: [
-                { id: 104, name: "Charlie", breed: "Chó Golden Retriever" },
-                { id: 105, name: "Max", breed: "Chó Poodle" },
-                { id: 106, name: "Bella", breed: "Chó Anh lông dài" }
-            ],
-            likes: 128,
-            comments: 15,
-            images: [
-                "https://images.unsplash.com/photo-1477884213360-7e9d7dcc1e48?w=800",
-                "https://images.unsplash.com/photo-1552053831-71594a27632d?w=800",
-                "https://images.unsplash.com/photo-1529778873920-4da4926a72c2?w=800",
-                "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=800"
-            ]
-        },
-        {
-            id: 4,
-            user: { 
-                name: "Nguyễn Minh Anh", 
-                avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" 
-            },
-            time: "3 giờ trước",
-            content:
-                "Milo của mình vừa học được một trò mới! Giờ cậu ấy có thể bắt tay và ngồi theo lệnh rồi.",
-            pets: [
-                { id: 107, name: "Milo", breed: "Chích chòe" }
-            ],
-            likes: 56,
-            comments: 12,
-            image: "https://images.unsplash.com/photo-1561037404-61cd46aa615b?w=800",
-        },
-        {
-            id: 6,
-            user: { 
-                name: "Lê Thị Hương", 
-                avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop" 
-            },
-            time: "12 giờ trước",
-            content:
-                "Max vừa tròn 5 tuổi hôm nay! Tổ chức sinh nhật cho cậu ấy với bánh và đồ chơi mới.",
-            pets: [
-                { id: 108, name: "Max", breed: "Pug" },
-                { id: 109, name: "Coco", breed: "Hamster" }
-            ],
-            likes: 145,
-            comments: 23,
-            image: "https://images.unsplash.com/photo-1552053831-71594a27632d?w=800",
-        },
-        {
-            id: 7,
-            user: { 
-                name: "Phạm Đức Long", 
-                avatar: "https://images.unsplash.com/photo-1504593811423-6dd665756598?w=100&h=100&fit=crop" 
-            },
-            time: "1 ngày trước",
-            content:
-                "Bella thích ngủ trong hộp giấy hơn là giường mới mình mua cho bé. Mèo thật khó hiểu! 😅",
-            pets: [
-                { id: 110, name: "Bella", breed: "Munchkin" },
-                { id: 111, name: "Oscar", breed: "Maine Coon" },
-                { id: 112, name: "Luna", breed: "Sphynx" }
-            ],
-            likes: 73,
-            comments: 18,
-            image: "https://images.unsplash.com/photo-1529778873920-4da4926a72c2?w=800",
-        },
-        {
-            id: 8,
-            user: { 
-                name: "Võ Thanh Tùng", 
-                avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop" 
-            },
-            time: "8 giờ trước",
-            content:
-                "Đưa Rocky đi tắm và cắt tỉa lông. Bây giờ cậu ấy trông thật đẹp trai và thơm tho!",
-            pets: [
-                { id: 113, name: "Rocky", breed: "Bulldog" }
-            ],
-            likes: 67,
-            comments: 9,
-            image: "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=800",
-        },
-        {
-            id: 9,
-            user: { 
-                name: "Hoàng Thị Mai", 
-                avatar: "https://images.unsplash.com/photo-1554151228-14d9def656e4?w=100&h=100&fit=crop" 
-            },
-            time: "2 ngày trước",
-            content:
-                "Coco vừa hoàn thành khóa huấn luyện cơ bản! Mình rất tự hào về em bé của mình.",
-            pets: [
-                { id: 114, name: "Coco", breed: "Shiba Inu" },
-                { id: 115, name: "Tweety", breed: "Vẹt" }
-            ],
-            likes: 112,
-            comments: 14,
-            image: "https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=800",
-        },
-    ]);
+  const floatingButtonRef = useRef(null);
+  const loadMoreRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [userData, setUserData] = useState(null);
+  const [peopleYouMayKnow, setPeopleYouMayKnow] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [activeFilter, setActiveFilter] = useState('latest');
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-    const handleOpenCreateDialog = () => {
-        if (floatingButtonRef.current) {
-            floatingButtonRef.current.openDialog();
+  useEffect(() => {
+    fetchNewfeedData();
+  }, []);
+
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    if (!loadMoreRef.current || loading || loadingMore || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          loadMorePosts();
         }
-    };
-
-    return (
-        <div className="relative bg-[#f5f3f0] min-h-screen py-5">
-            <div className="px-26 w-[100%]">
-                <div className="grid grid-cols-4 justify-center gap-4">
-                    {/* Left sidebar */}
-                    <div className="lg:col-span-1">
-                        <UserProfile />
-                    </div>
-
-                    {/* Main content */}
-                    <div className="lg:col-span-2">
-                        <PostCreation onOpenDialog={handleOpenCreateDialog} />
-                        <PostFilter />
-                        <div>
-                            {posts.map((post) => (
-                                <PostItem key={post.id} post={post} />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Right sidebar */}
-                    <div className="lg:col-span-1">
-                        <PeopleYouMayKnow />
-                    </div>
-                </div>
-            </div>
-            <FloatingCreateButton ref={floatingButtonRef} />
-        </div>
+      },
+      { threshold: 0.1 }
     );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => {
+      if (loadMoreRef.current) {
+        observer.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [loading, loadingMore, hasMore, currentPage, activeFilter]);
+
+  const fetchNewfeedData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await getNewfeedData(5, 1, 15);
+
+      // Kiểm tra response hợp lệ
+      if (!response || !response.success || !response.data) {
+        console.error('Invalid response structure:', response);
+        throw new Error('Invalid response format');
+      }
+
+      const data = response.data;
+
+      setUserData(data.user);
+      setPeopleYouMayKnow(data.people_you_may_know || []);
+
+      // Đảm bảo rawPosts luôn là array
+      const rawPosts = Array.isArray(data.posts && data.posts.data)
+        ? data.posts.data
+        : Array.isArray(data.posts)
+          ? data.posts
+          : [];
+
+      const transformedPosts = transformPostsData(rawPosts);
+
+      setPosts(transformedPosts);
+      setCurrentPage(1);
+
+      // Check if there are more posts
+      const totalPages = data.posts?.last_page || 1;
+      setHasMore(1 < totalPages);
+    } catch (err) {
+      console.error('Failed to fetch newfeed data:', err);
+      console.error('Error details:', (err && err.response) || err);
+
+      var errorMessage =
+        err &&
+          err.response &&
+          err.response.data &&
+          err.response.data.message
+          ? err.response.data.message
+          : err && err.message
+            ? err.message
+            : 'Đã có lỗi xảy ra, vui lòng thử lại sau.';
+
+      setError(errorMessage);
+      toast.error('Không thể tải dữ liệu trang chủ');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+  // Transform posts data helper function
+  const transformPostsData = (rawPosts) => {
+    return rawPosts.map(post => {
+      const author = post.author || {};
+      const firstName = author.first_name || '';
+      const lastName = author.last_name || '';
+
+      const fullName =
+        firstName || lastName
+          ? (lastName + ' ' + firstName).trim()
+          : 'Unknown';
+
+      const avatar = getAvatarUrl(author.avatar_url, fullName);
+
+      const multimedia = Array.isArray(post.multimedia) ? post.multimedia : [];
+      const images = multimedia
+        .filter(m => (m.media_type === 'image' || m.type === 'image'))
+        .map(m => getImageUrl(m.media_url || m.file_url));
+
+      const likesCount =
+        post.likes_count != null
+          ? Number(post.likes_count)
+          : Array.isArray(post.likes)
+            ? post.likes.length
+            : 0;
+
+      const commentsCount =
+        post.comment_counts != null
+          ? Number(post.comment_counts)
+          : 0;
+
+      return {
+        id: post.id || post._id,
+        user: {
+          id: author.id || author._id,
+          name: fullName,
+          avatar: avatar,
+        },
+        time: formatTimeAgo(post.created_at),
+        content: post.content || '',
+        pets: post.taggedPets || post.tagged_pets || [],
+        likes: likesCount,
+        comments: commentsCount,
+        comments_count: commentsCount,
+        images: images,
+        image: images.length > 0 ? images[0] : null,
+        is_liked: post.is_liked || false,
+      };
+    });
+  };
+
+  // Format time ago helper function
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Vừa xong';
+
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+
+    if (seconds < 60) return 'Vừa xong';
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} phút trước`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} giờ trước`;
+
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days} ngày trước`;
+
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months} tháng trước`;
+
+    const years = Math.floor(months / 12);
+    return `${years} năm trước`;
+  };
+
+  const handleOpenCreateDialog = () => {
+    if (floatingButtonRef.current) {
+      floatingButtonRef.current.openDialog();
+    }
+  };
+
+  // Handle follow/unfollow action to update user's following count
+  const handleFollowToggle = (userId, isNowFollowing) => {
+    setUserData(prevData => {
+      if (!prevData) return prevData;
+
+      return {
+        ...prevData,
+        following_count: isNowFollowing
+          ? (prevData.following_count || 0) + 1
+          : Math.max(0, (prevData.following_count || 0) - 1)
+      };
+    });
+  };
+
+  // Handle post updated (e.g., likes, content changes)
+  const handlePostUpdated = (updatedPost) => {
+    setPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === updatedPost.id ? { ...post, ...updatedPost } : post
+      )
+    );
+  };
+
+  // Handle new post creation
+  const handlePostCreated = async (newPost) => {
+    try {
+      // Refresh the entire feed to get the latest posts including the new one
+      await fetchNewfeedData();
+    } catch (error) {
+      console.error('Failed to refresh feed after post creation:', error);
+    }
+  };
+
+  // Handle post deleted
+  const handlePostDeleted = (postId) => {
+    // Remove deleted post from posts list
+    setPosts(prevPosts =>
+      prevPosts.filter(p => p.id !== postId && p._id !== postId)
+    );
+  };
+
+  // Handle filter change
+  // Handle filter change
+  const handleFilterChange = async (filterType) => {
+    if (filterType === activeFilter) return;
+
+    try {
+      setActiveFilter(filterType);
+      setLoadingPosts(true);
+
+      const response = await getFilteredFeed(filterType, 1, 15);
+
+      if (!response || !response.success || !response.data) {
+        throw new Error('Invalid response format');
+      }
+
+      const rawPosts = Array.isArray(response.data.data)
+        ? response.data.data
+        : Array.isArray(response.data)
+          ? response.data
+          : [];
+
+      const transformedPosts = transformPostsData(rawPosts);
+
+      setPosts(transformedPosts);
+      setCurrentPage(1);
+
+      // Check if there are more posts
+      const totalPages = response.data?.last_page || 1;
+      setHasMore(1 < totalPages);
+    } catch (err) {
+      console.error('Failed to fetch filtered posts:', err);
+      toast.error('Không thể tải danh sách bài viết');
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  // Load more posts (lazy loading)
+  const loadMorePosts = async () => {
+    if (loadingMore || !hasMore) return;
+
+    try {
+      setLoadingMore(true);
+      const nextPage = currentPage + 1;
+
+      const response = await getFilteredFeed(activeFilter, nextPage, 15);
+
+      if (!response || !response.success || !response.data) {
+        throw new Error('Invalid response format');
+      }
+
+      const rawPosts = Array.isArray(response.data.data)
+        ? response.data.data
+        : Array.isArray(response.data)
+          ? response.data
+          : [];
+
+      const transformedPosts = transformPostsData(rawPosts);
+
+      // Append new posts to existing ones
+      setPosts(prevPosts => [...prevPosts, ...transformedPosts]);
+      setCurrentPage(nextPage);
+
+      // Check if there are more posts
+      const totalPages = response.data?.last_page || nextPage;
+      setHasMore(nextPage < totalPages);
+    } catch (err) {
+      console.error('Failed to load more posts:', err);
+      toast.error('Không thể tải thêm bài viết');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Show error state
+  if (error && !loading) {
+    return (
+      <div className="relative bg-[#f5f3f0] min-h-screen py-5">
+        <div className="px-26 w-[100%]">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <p className="text-lg text-gray-700">Không thể hiển thị trang chủ hệ thống, vui lòng load lại trang.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative bg-[#f5f3f0] min-h-screen py-5">
+      <div className="px-26 w-[100%]">
+        <div className="grid grid-cols-4 justify-center gap-4">
+          {/* Left sidebar */}
+          <div className="lg:col-span-1">
+            <UserProfile userData={userData} isLoading={loading} />
+          </div>
+
+          {/* Main content */}
+          <div className="lg:col-span-2">
+            <PostCreation onOpenDialog={handleOpenCreateDialog} />
+            <PostFilter activeFilter={activeFilter} onFilterChange={handleFilterChange} />
+            {loading || loadingPosts ? (
+              <div>
+                {[1, 2, 3].map((i) => (
+                  <PostSkeleton key={i} />
+                ))}
+              </div>
+            ) : (
+              <div>
+                {posts.map((post) => (
+                  <PostItem key={post.id} post={post} onPostUpdated={handlePostUpdated} onPostDeleted={handlePostDeleted} />
+                ))}
+                {posts.length === 0 && (
+                  <div className="bg-white rounded-lg p-8 text-center">
+                    <p className="text-gray-500">Chưa có bài viết nào</p>
+                  </div>
+                )}
+
+                {/* Load more trigger */}
+                {hasMore && posts.length > 0 && (
+                  <div ref={loadMoreRef} className="py-4 pt-0">
+                    {loadingMore && (
+                      <div>
+                        {[1, 2].map((i) => (
+                          <PostSkeleton key={i} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right sidebar */}
+          <div className="lg:col-span-1">
+            <PeopleYouMayKnow
+              people={peopleYouMayKnow}
+              isLoading={loading}
+              onFollowToggle={handleFollowToggle}
+            />
+          </div>
+        </div>
+      </div>
+      <FloatingCreateButton ref={floatingButtonRef} onPostCreated={handlePostCreated} userData={userData} />
+    </div>
+  );
 }

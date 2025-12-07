@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 import httpClient from '../api/httpClient';
 import authApi from '../api/authApi';
 
@@ -18,6 +19,7 @@ export const AdminAuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     const STORAGE_KEY = 'admin_auth_user';
+    const SESSION_CHECK_INTERVAL = 5 * 60 * 1000; // Check session every 5 minutes
 
     const saveAdminToStorage = (adminData) => {
         try {
@@ -37,13 +39,16 @@ export const AdminAuthProvider = ({ children }) => {
 
     const fetchCsrfCookie = async () => {
         try {
-            await httpClient.get('/sanctum/csrf-cookie');
+            await axios.get('http://localhost:8000/sanctum/csrf-cookie', { 
+                withCredentials: true,
+                baseURL: '' 
+            });
         } catch (error) {
             console.error('Failed to fetch CSRF cookie:', error);
         }
     };
 
-    const checkAdminSession = async () => {
+    const checkAdminSession = async (silent = false) => {
         try {
             const response = await authApi.getUser();
             if (response?.success && response?.data) {
@@ -53,30 +58,40 @@ export const AdminAuthProvider = ({ children }) => {
                     setAdmin(user);
                     setIsAuthenticated(true);
                     saveAdminToStorage(user);
+                    return true;
                 } else {
                     // If logged in as user but checking admin session, clear admin state
+                    if (!silent) {
+                        console.warn('User is not an admin');
+                    }
                     setAdmin(null);
                     setIsAuthenticated(false);
                     removeAdminFromStorage();
+                    return false;
                 }
             } else {
-                // Check if localStorage has admin data
-                const stored = localStorage.getItem(STORAGE_KEY);
-                if (!stored) {
-                    setAdmin(null);
-                    setIsAuthenticated(false);
+                // Session is invalid - force logout
+                if (!silent) {
+                    console.warn('Admin session expired or invalid');
                 }
-            }
-        } catch (error) {
-            // If there's an error, check localStorage
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (!stored) {
                 setAdmin(null);
                 setIsAuthenticated(false);
+                removeAdminFromStorage();
+                return false;
             }
-            console.error('Admin session check error:', error.message);
+        } catch (error) {
+            // On error, session is invalid - force logout
+            if (!silent) {
+                console.error('Admin session check error:', error.message);
+            }
+            setAdmin(null);
+            setIsAuthenticated(false);
+            removeAdminFromStorage();
+            return false;
         } finally {
-            setLoading(false);
+            if (!silent) {
+                setLoading(false);
+            }
         }
     };
 
@@ -150,6 +165,25 @@ export const AdminAuthProvider = ({ children }) => {
         };
         
         initializeAdminAuth();
+
+        // 3. Set up periodic session validation
+        const sessionCheckInterval = setInterval(async () => {
+            // Only check if admin is authenticated
+            if (localStorage.getItem(STORAGE_KEY)) {
+                const isValid = await checkAdminSession(true); // silent check
+                if (!isValid) {
+                    // Session expired - redirect to admin login if not already there
+                    if (window.location.pathname !== '/admin/login') {
+                        window.location.href = '/admin/login';
+                    }
+                }
+            }
+        }, SESSION_CHECK_INTERVAL);
+
+        // Cleanup interval on unmount
+        return () => {
+            clearInterval(sessionCheckInterval);
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

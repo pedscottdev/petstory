@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Mail\SendOtpMail;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -185,22 +186,36 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
-            $this->authService->logout($user);
             
-            // Regenerate session ID for security
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            // Always try to logout regardless of errors
+            $this->authService->logout($user ?? new User());
+            
+            // Regenerate session ID for security (only if session exists)
+            // When using Sanctum token auth, there's no session
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Đăng xuất thành công!'
             ], 200);
         } catch (\Exception $e) {
+            // Even if there's an error in the logout process, we still want to ensure
+            // the frontend can clear the user state and redirect to login
+            Log::error('Logout API error: ' . $e->getMessage());
+            
+            // Still clear session data manually as a fallback
+            if ($request->hasSession()) {
+                $request->session()->flush();
+            }
+            
+            // Return success to frontend so user can be redirected to login
             return response()->json([
-                'success' => false,
-                'message' => 'Lỗi hệ thống, vui lòng thử lại sau.',
-                'error' => $e->getMessage()
-            ], 500);
+                'success' => true,
+                'message' => 'Đăng xuất thành công!'
+            ], 200);
         }
     }
 

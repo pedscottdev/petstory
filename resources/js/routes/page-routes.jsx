@@ -55,6 +55,7 @@ export default function AppRoutes() {
               <Route path="groups" element={<GroupsPage />} />
               <Route path="groups/:id" element={<GroupDetailPage />} />
               <Route path="chats" element={<ChatPage />} />
+              <Route path="chats/:conversationId" element={<ChatPage />} />
               <Route path="profile/:userId" element={<ProfilePage />} />
               
               {/* Settings with nested routes */}

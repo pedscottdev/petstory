@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Pet extends Model
 {
+    use HasFactory;
     /**
      * The connection name for the model.
      *
@@ -46,6 +48,25 @@ class Pet extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+    
+    /**
+     * Get the attributes that should be converted to dates.
+     *
+     * @return void
+     */
+    public function toArray()
+    {
+        $array = parent::toArray();
+        // Ensure _id is included in the array representation
+        if (!isset($array['_id']) && isset($this->_id)) {
+            $array['_id'] = $this->_id;
+        }
+        // Also set 'id' as an alias for _id if it doesn't exist
+        if (!isset($array['id']) && isset($this->_id)) {
+            $array['id'] = $this->_id;
+        }
+        return $array;
+    }
 
     /**
      * Get the owner of the pet.

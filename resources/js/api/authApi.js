@@ -22,7 +22,17 @@ const authApi = {
     return httpClient.get('/user');
   },
 
-  // User logout
+  // User logout (from user portal)
+  logoutUser: () => {
+    return httpClient.post('/auth/user-logout');
+  },
+
+  // Admin logout (from admin portal)
+  logoutAdmin: () => {
+    return httpClient.post('/auth/admin-logout');
+  },
+
+  // Legacy logout (auto-detects role)
   logout: () => {
     return httpClient.post('/auth/logout');
   },

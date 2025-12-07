@@ -19,6 +19,7 @@ export const AdminAuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     const STORAGE_KEY = 'admin_auth_user';
+    const TOKEN_KEY = 'admin_auth_token';  // Separate token key for admin
     const SESSION_CHECK_INTERVAL = 5 * 60 * 1000; // Check session every 5 minutes
 
     const saveAdminToStorage = (adminData) => {
@@ -39,9 +40,9 @@ export const AdminAuthProvider = ({ children }) => {
 
     const fetchCsrfCookie = async () => {
         try {
-            await axios.get('http://localhost:8000/sanctum/csrf-cookie', { 
+            await axios.get('http://localhost:8000/sanctum/csrf-cookie', {
                 withCredentials: true,
-                baseURL: '' 
+                baseURL: ''
             });
         } catch (error) {
             console.error('Failed to fetch CSRF cookie:', error);
@@ -98,6 +99,10 @@ export const AdminAuthProvider = ({ children }) => {
     const login = async (email, password) => {
         setLoading(true);
         try {
+            // Clear any existing admin session/token before login to prevent race conditions
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(STORAGE_KEY);
+
             // Fetch CSRF cookie first
             await fetchCsrfCookie();
 
@@ -106,9 +111,17 @@ export const AdminAuthProvider = ({ children }) => {
 
             if (response?.success && response?.data?.user) {
                 const adminData = response.data.user;
+                const token = response.data.token;
+
                 setAdmin(adminData);
                 setIsAuthenticated(true);
                 saveAdminToStorage(adminData);
+
+                // Save token to localStorage for Bearer token authentication
+                if (token) {
+                    localStorage.setItem(TOKEN_KEY, token);
+                }
+
                 return { success: true };
             } else {
                 return { success: false, message: response?.message || 'Đăng nhập thất bại' };
@@ -125,8 +138,8 @@ export const AdminAuthProvider = ({ children }) => {
     const logout = async () => {
         setLoading(true);
         try {
-            // Call logout API
-            await authApi.logout();
+            // Call admin-specific logout API
+            await authApi.logoutAdmin();
         } catch (error) {
             console.error('Admin logout error:', error);
         } finally {
@@ -134,36 +147,51 @@ export const AdminAuthProvider = ({ children }) => {
             setAdmin(null);
             setIsAuthenticated(false);
             removeAdminFromStorage();
+
+            // Clear token from localStorage
+            localStorage.removeItem(TOKEN_KEY);
+
             setLoading(false);
         }
     };
 
     useEffect(() => {
         // 1. Hydrate from localStorage on mount
+        let hasStoredAdmin = false;
         try {
             const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
                 const parsedAdmin = JSON.parse(stored);
                 setAdmin(parsedAdmin);
                 setIsAuthenticated(true);
+                hasStoredAdmin = true;
             }
         } catch (e) {
             console.error('Cannot parse stored admin', e);
         }
 
-        // 2. Check admin session with server
+        // 2. Check admin session with server ONLY if there's stored admin data AND a token
+        // This prevents unnecessary 401 errors during initialization
         const initializeAdminAuth = async () => {
             try {
-                // Fetch CSRF cookie first
-                await fetchCsrfCookie();
-                // Then check admin session
-                await checkAdminSession();
+                const hasToken = !!localStorage.getItem(TOKEN_KEY);
+
+                // Only check session if we have valid credentials
+                if (hasStoredAdmin && hasToken) {
+                    // Fetch CSRF cookie first
+                    await fetchCsrfCookie();
+                    // Then check admin session
+                    await checkAdminSession();
+                } else {
+                    // No stored credentials, just set loading to false
+                    setLoading(false);
+                }
             } catch (error) {
                 console.error('Admin auth initialization failed:', error);
                 setLoading(false);
             }
         };
-        
+
         initializeAdminAuth();
 
         // 3. Set up periodic session validation

@@ -47,8 +47,23 @@ class AuthService
             ]);
         }
 
+        // IMPORTANT: Invalidate any existing session and regenerate before login
+        // This prevents session fixation attacks and ensures clean session for new user
+        if (session()->isStarted()) {
+            session()->invalidate();
+            session()->regenerate();
+        }
+
+        // NOTE: We don't revoke existing tokens here to allow dual admin/user sessions
+        // Each portal (admin/user) has its own token stored separately in localStorage
+
         // Login user vào session (Sanctum session-based auth)
         Auth::login($user);
+
+        // Regenerate session after login for security
+        if (session()->isStarted()) {
+            session()->regenerate();
+        }
 
         // Tạo token cho broadcasting authentication
         // Token này sẽ được sử dụng bởi Echo.js để authenticate với private channels
@@ -88,8 +103,23 @@ class AuthService
             ]);
         }
 
+        // IMPORTANT: Invalidate any existing session and regenerate before login
+        // This prevents session fixation attacks and ensures clean session for new user
+        if (session()->isStarted()) {
+            session()->invalidate();
+            session()->regenerate();
+        }
+
+        // NOTE: We don't revoke existing tokens here to allow dual admin/user sessions
+        // Each portal (admin/user) has its own token stored separately in localStorage
+
         // Login user vào session (Sanctum session-based auth)
         Auth::login($user);
+
+        // Regenerate session after login for security
+        if (session()->isStarted()) {
+            session()->regenerate();
+        }
 
         // Tạo token cho broadcasting authentication
         // Token này sẽ được sử dụng bởi Echo.js để authenticate với private channels
@@ -135,12 +165,13 @@ class AuthService
     }
 
     /**
-     * Logout user
+     * Logout user (from user portal)
      *
      * @param User $user
+     * @param string|null $tokenId - The current token ID to revoke
      * @return void
      */
-    public function logout(User $user): void
+    public function logoutUser(User $user, ?string $tokenId = null): void
     {
         try {
             // Broadcast user offline status before logout
@@ -149,30 +180,68 @@ class AuthService
                 event(new UserOnlineStatusChanged($user, false));
             }
             
-            // For session-based auth with Sanctum, we logout from session
-            if (Auth::check()) {
-                Auth::logout();
-                
-                // If using session driver, invalidate session
-                if (session()->isStarted()) {
-                    session()->invalidate();
-                    session()->regenerateToken();
-                }
-            }
+            // IMPORTANT: Do NOT invalidate session or call Auth::logout()
+            // This would destroy the shared session and log out admin as well
+            // Instead, we only revoke the current token
             
-            // Also revoke all tokens for the user (if using API tokens)
-            if ($user && $user->tokens) {
-                $user->tokens()->delete();
+            // Only revoke the current token, not all tokens
+            // This allows admin session to remain active
+            if ($user && $tokenId) {
+                $user->tokens()->where('id', $tokenId)->delete();
+            } elseif ($user && $user->currentAccessToken()) {
+                $user->currentAccessToken()->delete();
             }
         } catch (\Exception $e) {
-            // Even if there's an error, we still want to ensure the user is logged out
-            // Log the error but don't throw it
-            Log::error('Logout error: ' . $e->getMessage());
-            
-            // Force clear session data
-            if (session()->isStarted()) {
-                session()->flush();
+            Log::error('User logout error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Logout admin (from admin portal)
+     *
+     * @param User $user
+     * @param string|null $tokenId - The current token ID to revoke
+     * @return void
+     */
+    public function logoutAdmin(User $user, ?string $tokenId = null): void
+    {
+        try {
+            // Broadcast user offline status before logout
+            if ($user && $user->id) {
+                TracksUserOnlineStatus::markUserOffline($user->id);
+                event(new UserOnlineStatusChanged($user, false));
             }
+            
+            // IMPORTANT: Do NOT invalidate session or call Auth::logout()
+            // This would destroy the shared session and log out user as well
+            // Instead, we only revoke the current token
+            
+            // Only revoke the current token, not all tokens
+            // This allows user session to remain active
+            if ($user && $tokenId) {
+                $user->tokens()->where('id', $tokenId)->delete();
+            } elseif ($user && $user->currentAccessToken()) {
+                $user->currentAccessToken()->delete();
+            }
+        } catch (\Exception $e) {
+            Log::error('Admin logout error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Logout user (legacy - for backward compatibility)
+     * @deprecated Use logoutUser or logoutAdmin instead
+     *
+     * @param User $user
+     * @return void
+     */
+    public function logout(User $user): void
+    {
+        // Determine role and call appropriate method
+        if ($user && $user->role === 'admin') {
+            $this->logoutAdmin($user);
+        } else {
+            $this->logoutUser($user);
         }
     }
 

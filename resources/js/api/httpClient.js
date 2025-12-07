@@ -1,8 +1,25 @@
 import axios from "axios";
 
+/**
+ * Helper function to get auth token from localStorage
+ * This token is used for Bearer token authentication
+ * Uses separate tokens for admin and user to prevent conflicts
+ */
+const getAuthToken = () => {
+    // Check if on admin pages - use admin token
+    const isAdminArea = window.location.pathname.startsWith('/admin');
+    
+    if (isAdminArea) {
+        return localStorage.getItem('admin_auth_token') || '';
+    }
+    
+    // For user pages, use user token
+    return localStorage.getItem('auth_token') || '';
+};
+
 const httpClient = axios.create({
     baseURL: "/api",
-    timeout: 30000, // Increased to 30 seconds
+    timeout: 30000, 
     headers: {
         Accept: "application/json",
         "X-Requested-With": "XMLHttpRequest", 
@@ -10,7 +27,7 @@ const httpClient = axios.create({
     withCredentials: true,
 });
 
-// Request interceptor - Fetch CSRF token before every authenticated request
+// Request interceptor - Fetch CSRF token and add Authorization header
 httpClient.interceptors.request.use(
     async (config) => {
         // Fetch CSRF cookie if not present
@@ -24,8 +41,12 @@ httpClient.interceptors.request.use(
             }
         }
         
-        // Touch session to keep it alive on each request (extends session lifetime)
-        // This is automatic with Laravel session middleware when withCredentials is true
+        // Add Authorization header with Bearer token (if available)
+        // This ensures token-based auth works even when session cookies are stale
+        const token = getAuthToken();
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
         
         return config;
     },

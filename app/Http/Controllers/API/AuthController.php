@@ -177,46 +177,84 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout user
+     * Logout user (from user portal)
      *
      * @param Request $request
      * @return JsonResponse
      */
-    public function logout(Request $request): JsonResponse
+    public function logoutUser(Request $request): JsonResponse
     {
         try {
             $user = $request->user();
             
-            // Always try to logout regardless of errors
-            $this->authService->logout($user ?? new User());
+            // Call the user-specific logout method
+            // This only revokes the current token, NOT the session
+            $this->authService->logoutUser($user ?? new User());
             
-            // Regenerate session ID for security (only if session exists)
-            // When using Sanctum token auth, there's no session
-            if ($request->hasSession()) {
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-            }
+            // NOTE: Do NOT invalidate session or clear session cookie here
+            // This would log out admin as well if they're using the same browser
 
             return response()->json([
                 'success' => true,
                 'message' => 'Đăng xuất thành công!'
             ], 200);
         } catch (\Exception $e) {
-            // Even if there's an error in the logout process, we still want to ensure
-            // the frontend can clear the user state and redirect to login
-            Log::error('Logout API error: ' . $e->getMessage());
+            Log::error('User logout API error: ' . $e->getMessage());
             
-            // Still clear session data manually as a fallback
-            if ($request->hasSession()) {
-                $request->session()->flush();
-            }
-            
-            // Return success to frontend so user can be redirected to login
             return response()->json([
                 'success' => true,
                 'message' => 'Đăng xuất thành công!'
             ], 200);
         }
+    }
+
+    /**
+     * Logout admin (from admin portal)
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function logoutAdmin(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            
+            // Call the admin-specific logout method
+            // This only revokes the current token, NOT the session
+            $this->authService->logoutAdmin($user ?? new User());
+            
+            // NOTE: Do NOT invalidate session or clear session cookie here
+            // This would log out user as well if they're using the same browser
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đăng xuất thành công!'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Admin logout API error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Đăng xuất thành công!'
+            ], 200);
+        }
+    }
+
+    /**
+     * Logout user (legacy - for backward compatibility)
+     * @deprecated Use logoutUser or logoutAdmin instead
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function logout(Request $request): JsonResponse
+    {
+        // Determine role and call appropriate method
+        $user = $request->user();
+        if ($user && $user->role === 'admin') {
+            return $this->logoutAdmin($request);
+        }
+        return $this->logoutUser($request);
     }
 
     /**

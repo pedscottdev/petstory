@@ -34,92 +34,50 @@ npm install
 
 ### 3. Cấu hình Environment
 
-```bash
-# Copy file .env.example thành .env
-cp .env.example .env
-
-# Hoặc trên Windows:
-copy .env.example .env
-
-# Generate application key
-php artisan key:generate
+Tải file .env từ folder ENV trên drive:
+https://1drv.ms/f/c/9cb0cc208e25f479/Eo3gNSnAAyNJuIUVGw2heKgBFazasuXr2XeIKHPnVtHl6Q
 ```
-
+```
 ### 4. Cấu hình Database (MongoDB)
 
-Mở file `.env` và cập nhật các biến sau:
+Tải extention "MongoDB" cho VS Code
+Connect bằng URL: mongodb+srv://admin:SECRET1q2w3e@petstory.wn1tugg.mongodb.net/
+Nếu không connect được, truy cập https://www.whatismyip.com/, lấy địa chỉ IPv4 của máy
+và liên hệ với Pedro để đăng ký IP.
 
-```env
-# Database connection
-DB_CONNECTION=mongodb
-DB_URI=mongodb://localhost:27017
-DB_DATABASE=petstory
+
+### 4. Cấu hình hệ thống
+
+#### Link Storage (để up ảnh)
+```laragon terminal
+php artisan storage:link
 ```
+> WebSocket server chạy tại: `ws://localhost:8080`
+>
+> Flag `--debug` giúp xem log real-time
 
-### 5. Cấu hình Reverb (WebSocket)
-
-Thêm các biến sau vào file `.env`:
-
-```env
-# Broadcasting với Reverb
-BROADCAST_CONNECTION=reverb
-
-# Reverb Config
-REVERB_APP_ID=petstory
-REVERB_APP_KEY=petstory-key
-REVERB_APP_SECRET=petstory-secret
-REVERB_HOST=localhost
-REVERB_PORT=8080
-REVERB_SCHEME=http
-
-# Reverb Server Config
-REVERB_SERVER_HOST=0.0.0.0
-REVERB_SERVER_PORT=8080
-
-# Vite (Frontend) Reverb Config
-VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
-VITE_REVERB_HOST="${REVERB_HOST}"
-VITE_REVERB_PORT="${REVERB_PORT}"
-VITE_REVERB_SCHEME="${REVERB_SCHEME}"
-```
-
-### 6. Cấu hình Session & Cache
-
-```env
-# Session & Cache
-SESSION_DRIVER=file
-CACHE_STORE=file
-```
-
-> **Lưu ý:** Với MongoDB, session và cache nên dùng `file` thay vì `database`.
-
-### 7. Seed Database (Dữ liệu mẫu)
-
+#### Build hệ thống
 ```bash
-php artisan db:seed
+npm run build
 ```
 
-Lệnh này sẽ tạo:
-- Người dùng mặc định (`DefaultUsersSeeder`)
-- Nhóm (`GroupSeeder`)
-- Dữ liệu mẫu mạng xã hội (`SocialSampleDataSeeder`)
 
 ---
 
 ## ▶️ Khởi chạy Ứng dụng
 
-### Phương pháp 1: Chạy các service riêng lẻ (Khuyến nghị cho Development)
 
 Mở **3 terminal** riêng biệt và chạy các lệnh sau:
 
+```
 #### Terminal 1 - Laravel Server (Backend API)
-```bash
+```laragon terminal
 php artisan serve
 ```
 > Server chạy tại: `http://localhost:8000`
 
 #### Terminal 2 - Reverb Server (WebSocket)
-```bash
+```laragon terminal
 php artisan reverb:start --debug
 ```
 > WebSocket server chạy tại: `ws://localhost:8080`
@@ -130,7 +88,8 @@ php artisan reverb:start --debug
 ```bash
 npm run dev
 ```
-> Frontend dev server chạy tại: `http://localhost:5173`
+
+Truy cập ứng dụng tại: http://localhost:8000
 
 ---
 

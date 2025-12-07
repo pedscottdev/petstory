@@ -34,7 +34,9 @@ use Illuminate\Support\Facades\Log;
 Route::post('auth/login', [AuthController::class, 'loginUser']);
 Route::post('auth/admin-login', [AuthController::class, 'loginAdmin']);
 Route::post('auth/register', [AuthController::class, 'register']);
-Route::post('auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::post('auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum'); // Legacy - auto-detects role
+Route::post('auth/user-logout', [AuthController::class, 'logoutUser'])->middleware('auth:sanctum'); // User portal logout
+Route::post('auth/admin-logout', [AuthController::class, 'logoutAdmin'])->middleware('auth:sanctum'); // Admin portal logout
 Route::post('auth/generate-otp', [AuthController::class, 'generateOTP']);
 Route::post('auth/verify-otp', [AuthController::class, 'verifyOTP']);
 Route::post('auth/confirm-password', [AuthController::class, 'confirmNewPassword']);

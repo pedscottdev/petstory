@@ -86,6 +86,11 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         setLoading(true);
         try {
+            // Clear any existing session/token before login to prevent race conditions
+            // This ensures a clean slate when switching between users
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem(STORAGE_KEY);
+
             await fetchCsrfCookie();
 
             const response = await authApi.loginUser({ email, password });
@@ -126,8 +131,8 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         setLoading(true);
         try {
-            // Attempt to call the logout API
-            await authApi.logout();
+            // Attempt to call the user-specific logout API
+            await authApi.logoutUser();
         } catch (error) {
             // Even if the API call fails, we still want to ensure the user is logged out
             console.error('Logout API error (but proceeding with local logout):', error);
@@ -154,24 +159,35 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         // 1. Hydrate từ localStorage trước cho UI mượt
+        let hasStoredUser = false;
         try {
             const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
                 const parsedUser = JSON.parse(stored);
                 setUser(parsedUser);
                 setIsAuthenticated(true);
+                hasStoredUser = true;
             }
         } catch (e) {
             console.error('Cannot parse stored user', e);
         }
 
-        // 2. Fetch CSRF cookie và kiểm tra session
+        // 2. Fetch CSRF cookie và kiểm tra session ONLY if there's stored user data AND a token
+        // This prevents unnecessary 401 errors during initialization
         const initializeAuth = async () => {
             try {
-                // Luôn fetch CSRF cookie đầu tiên
-                await fetchCsrfCookie();
-                // Sau đó kiểm tra session
-                await checkUserSession();
+                const hasToken = !!localStorage.getItem('auth_token');
+
+                // Only check session if we have valid credentials
+                if (hasStoredUser && hasToken) {
+                    // Luôn fetch CSRF cookie đầu tiên
+                    await fetchCsrfCookie();
+                    // Sau đó kiểm tra session
+                    await checkUserSession();
+                } else {
+                    // No stored credentials, just set loading to false
+                    setLoading(false);
+                }
             } catch (error) {
                 console.error('Auth initialization failed:', error);
                 setLoading(false);

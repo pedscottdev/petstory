@@ -8,6 +8,7 @@ import { LuArrowRight } from 'react-icons/lu';
 import { Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toggleFollow as toggleFollowApi } from '@/api/userApi';
+import { getImageUrl } from '@/utils/imageUtils';
 
 export default function PeopleYouMayKnow({ people = [], isLoading, onFollowToggle }) {
   const [followingState, setFollowingState] = useState(
@@ -21,11 +22,11 @@ export default function PeopleYouMayKnow({ people = [], isLoading, onFollowToggl
   const handleToggleFollow = async (userId) => {
     // Set loading state for this specific user
     setLoadingStates(prev => ({ ...prev, [userId]: true }));
-    
+
     try {
       const previousState = followingState[userId];
       const newFollowState = !previousState;
-      
+
       // Optimistically update UI
       setFollowingState(prev => ({
         ...prev,
@@ -33,12 +34,12 @@ export default function PeopleYouMayKnow({ people = [], isLoading, onFollowToggl
       }));
 
       await toggleFollowApi(userId);
-      
+
       // Notify parent component to update following count
       if (onFollowToggle) {
         onFollowToggle(userId, newFollowState);
       }
-      
+
       toast.success(previousState ? 'Đã hủy theo dõi' : 'Đã theo dõi');
     } catch (error) {
       // Revert on error
@@ -107,7 +108,7 @@ export default function PeopleYouMayKnow({ people = [], isLoading, onFollowToggl
           <div key={person.id} className="flex items-start justify-between">
             <div className="flex items-center gap-2">
               <Avatar className="w-8.5 h-8.5">
-                <AvatarImage src={person.avatar_url} alt={person.name} />
+                <AvatarImage src={getImageUrl(person.avatar_url)} alt={person.name} />
                 <AvatarFallback className={"bg-primary text-primary-foreground "}>{person.name?.charAt(0) || 'U'}</AvatarFallback>
               </Avatar>
               <div className=''>

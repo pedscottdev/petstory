@@ -232,8 +232,8 @@ export default function AdminViewProfilePage() {
                         <h1 className="text-3xl font-bold">{user.full_name || "Người dùng không xác định"}</h1>
                         <HiBadgeCheck className="text-[#1959d8] text-2xl" />
                         <span className={`px-2 py-1 rounded-full text-xs ${user.is_active
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
                           }`}>
                           {user.is_active ? 'Hoạt động' : 'Bị chặn'}
                         </span>
@@ -334,7 +334,7 @@ export default function AdminViewProfilePage() {
                   {/* Post Header */}
                   <div className="flex items-center gap-3 mb-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={post.user.avatar} alt={post.user.name} />
+                      <AvatarImage src={getImageUrl(post.user.avatar)} alt={post.user.name} />
                       <AvatarFallback className="bg-[#91114D] text-white">{post.user.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>

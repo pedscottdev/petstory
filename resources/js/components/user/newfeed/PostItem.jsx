@@ -456,7 +456,7 @@ export default function PostItem({ post, onPostDeleted, onPostUpdated }) {
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4">
         <div className="flex items-center gap-3">
           <Avatar className={"!w-10 !h-10"}>
-            <AvatarImage src={post.user.avatar} alt={post.user.name} />
+            <AvatarImage src={getImageUrl(post.user.avatar)} alt={post.user.name} />
             <AvatarFallback className={"bg-black text-white"}>{post.user.name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
@@ -649,7 +649,7 @@ export default function PostItem({ post, onPostDeleted, onPostUpdated }) {
                   post.pets.map((pet) => (
                     <div key={pet.id} className="flex items-center gap-4 rounded-lg border p-3">
                       <Avatar className="!w-12 !h-12">
-                        <AvatarImage src={pet.avatar_url || pet.avatar} alt={pet.name} />
+                        <AvatarImage src={getImageUrl(pet.avatar_url || pet.avatar)} alt={pet.name} />
                         <AvatarFallback className="bg-black text-white">
                           {pet.name.charAt(0)}
                         </AvatarFallback>
@@ -877,7 +877,7 @@ export default function PostItem({ post, onPostDeleted, onPostUpdated }) {
                   {editedTaggedPets.map((pet) => (
                     <div key={pet.id} className="flex items-center gap-3 p-2 border rounded-lg">
                       <Avatar className="!w-10 !h-10">
-                        <AvatarImage src={pet.avatar_url || pet.avatar} alt={pet.name} />
+                        <AvatarImage src={getImageUrl(pet.avatar_url || pet.avatar)} alt={pet.name} />
                         <AvatarFallback className="bg-black text-white">
                           {pet.name.charAt(0)}
                         </AvatarFallback>

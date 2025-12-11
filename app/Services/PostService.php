@@ -13,6 +13,18 @@ use Illuminate\Validation\ValidationException;
 
 class PostService
 {
+    protected $imageUploadService;
+
+    /**
+     * Constructor
+     *
+     * @param ImageUploadService $imageUploadService
+     */
+    public function __construct(ImageUploadService $imageUploadService)
+    {
+        $this->imageUploadService = $imageUploadService;
+    }
+
     /**
      * Get post by ID with full details (author, likes, multimedia, etc.)
      *
@@ -121,6 +133,23 @@ class PostService
         
         if (!$post) {
             return false;
+        }
+
+        // Get all multimedia files before deleting records
+        $multimediaFiles = PostMultimedia::where('post_id', $postId)->get();
+        
+        // Delete physical files from storage
+        foreach ($multimediaFiles as $media) {
+            if ($media->file_url) {
+                try {
+                    $this->imageUploadService->deleteImage($media->file_url);
+                } catch (\Exception $e) {
+                    // Log error but continue with deletion
+                    \Log::warning("Failed to delete image file: {$media->file_url}", [
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
         }
 
         // Delete related data

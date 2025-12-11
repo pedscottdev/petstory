@@ -7,10 +7,11 @@ import { Calendar, VenetianMask } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getImageUrl } from '@/utils/imageUtils';
 
 const PetCard = ({ pet, onLike, onView, onEdit, onDelete, isMyPet = false, isLoading = false }) => {
   const navigate = useNavigate();
-  
+
   // If isLoading is true, render the skeleton
   if (isLoading) {
     return (
@@ -29,7 +30,7 @@ const PetCard = ({ pet, onLike, onView, onEdit, onDelete, isMyPet = false, isLoa
             <Skeleton className="h-6 w-20 rounded-full bg-gray-300" />
           </div>
           <Skeleton className="h-10 w-full mt-3 bg-gray-300" />
-          
+
           {/* Pet information grid */}
           <div className="bg-gray-100 py-3 rounded-lg flex items-center justify-between gap-2 text-center text-sm mt-3 px-6">
             <div className='w-fit text-nowrap'>
@@ -55,7 +56,7 @@ const PetCard = ({ pet, onLike, onView, onEdit, onDelete, isMyPet = false, isLoa
       </Card>
     );
   }
-  
+
   const handleLike = (petId) => {
     onLike(petId);
     toast.success(pet.isLiked ? 'Bạn đã hủy thích thú cưng' : 'Bạn đã thích thú cưng');
@@ -70,7 +71,7 @@ const PetCard = ({ pet, onLike, onView, onEdit, onDelete, isMyPet = false, isLoa
       <CardHeader className="px-3">
         <div className="relative bg-gradient-to-b from-[#f2eef0] via-[#fffbfd] to-white rounded-xl h-32 pt-12 flex items-center justify-center">
           <Avatar className="w-28 h-28   ">
-            <AvatarImage src={pet.avatar_url} alt={pet.name} className={"object-cover"}/>
+            <AvatarImage src={getImageUrl(pet.avatar_url)} alt={pet.name} className={"object-cover"} />
             <AvatarFallback className="text-2xl bg-black text-white">
               {pet.name.charAt(0)}
             </AvatarFallback>

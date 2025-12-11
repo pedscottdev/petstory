@@ -231,6 +231,16 @@ export default function NewfeedPage() {
     setPosts(prevPosts =>
       prevPosts.filter(p => p.id !== postId && p._id !== postId)
     );
+
+    // Update user's posts count
+    setUserData(prevData => {
+      if (!prevData) return prevData;
+
+      return {
+        ...prevData,
+        posts_count: Math.max(0, (prevData.posts_count || 0) - 1)
+      };
+    });
   };
 
   // Handle filter change

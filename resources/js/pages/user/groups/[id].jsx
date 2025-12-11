@@ -704,7 +704,7 @@ export default function GroupDetailPage() {
                   <div key={member.id} className="flex items-center justify-between py-3 border-b">
                     <div className="flex items-center space-x-3">
                       <Avatar>
-                        <AvatarImage src={member.avatar} alt={member.name} />
+                        <AvatarImage src={getImageUrl(member.avatar)} alt={member.name} />
                         <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
@@ -895,7 +895,7 @@ export default function GroupDetailPage() {
                               <div key={member.id} className="flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
                                   <Avatar>
-                                    <AvatarImage src={member.avatar} alt={member.name} />
+                                    <AvatarImage src={getImageUrl(member.avatar)} alt={member.name} />
                                     <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                                   </Avatar>
                                   <div>

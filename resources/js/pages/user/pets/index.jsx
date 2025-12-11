@@ -699,7 +699,7 @@ export default function PetsPage() {
                   <div className="col-span-3">
                     <div className="flex items-center gap-4">
                       <Avatar className="w-16 h-16">
-                        <AvatarImage src={newPetAvatarPreview || newPet.avatar_url} alt="Pet preview" />
+                        <AvatarImage src={newPetAvatarPreview || newPet.avatar_url} alt="Pet preview" className={"object-cover"} />
                         <AvatarFallback className="bg-[#E6DDD5]">
                           {newPet.name ? newPet.name.charAt(0) : 'Pet'}
                         </AvatarFallback>
@@ -1091,7 +1091,7 @@ export default function PetsPage() {
                   <div className="md:col-span-1">
                     <div className="bg-gray-200 h-64 rounded-lg flex items-center justify-center">
                       <Avatar className="w-32 h-32">
-                        <AvatarImage src={selectedPet.avatar_url} alt={selectedPet.name} />
+                        <AvatarImage src={getImageUrl(selectedPet.avatar_url)} alt={selectedPet.name} />
                         <AvatarFallback className="text-3xl bg-[#E6DDD5]">
                           {selectedPet.name.charAt(0)}
                         </AvatarFallback>

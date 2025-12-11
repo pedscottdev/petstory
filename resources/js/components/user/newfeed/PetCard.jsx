@@ -70,8 +70,8 @@ const PetCard = ({ pet, onLike, onView, onEdit, onDelete, isMyPet = false, isLoa
     <Card key={pet._id} className="rounded-3xl shadow-none border border-gray-300 pt-3 overflow-hidden gap-y-4">
       <CardHeader className="px-3">
         <div className="relative bg-gradient-to-b from-[#f2eef0] via-[#fffbfd] to-white rounded-xl h-32 pt-12 flex items-center justify-center">
-          <Avatar className="w-28 h-28   ">
-            <AvatarImage src={getImageUrl(pet.avatar_url)} alt={pet.name} className={"object-cover"} />
+          <Avatar className="w-28 h-28">
+            <AvatarImage src={getImageUrl(pet.avatar_url)} alt={pet.name} className="object-cover" />
             <AvatarFallback className="text-2xl bg-black text-white">
               {pet.name.charAt(0)}
             </AvatarFallback>

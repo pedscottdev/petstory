@@ -319,14 +319,16 @@ export default function PetsPage() {
     setIsSubmitting(true);
     try {
       let avatarUrl = editingPet.avatar_url;
+      const oldAvatarUrl = editingPet.avatar_url; // Store old avatar path
 
       // Upload avatar if it's a new file (base64)
       if (editingPet.avatar_url && editingPet.avatar_url.startsWith('data:')) {
         try {
           const file = base64ToFile(editingPet.avatar_url, `pet-${editingPet._id}.jpg`);
           const uploadResult = await uploadPetAvatar(file, editingPet._id);
-          if (uploadResult && uploadResult.path) {
-            avatarUrl = uploadResult.path;
+          if (uploadResult && (uploadResult.path || uploadResult.url)) {
+            // Use the path from upload result, not the full URL
+            avatarUrl = uploadResult.path || uploadResult.url;
           }
         } catch (uploadError) {
           console.error('Error uploading avatar:', uploadError);
@@ -1200,7 +1202,9 @@ export default function PetsPage() {
             setEditingPetAvatarPreview(null);
           }
         }}>
-          <DialogContent className="min-w-xl">
+          <DialogContent className="min-w-xl" onInteractOutside={(e) => {
+            e.preventDefault();
+          }}>
             {editingPet && (
               <>
                 <DialogHeader>
@@ -1215,7 +1219,7 @@ export default function PetsPage() {
                     <div className="col-span-3">
                       <div className="flex items-center gap-4">
                         <Avatar className="w-16 h-16">
-                          <AvatarImage src={editingPetAvatarPreview || editingPet.avatar_url} alt="Pet preview" />
+                          <AvatarImage src={editingPetAvatarPreview || editingPet.avatar_url} alt="Pet preview" className={'object-cover'} />
                           <AvatarFallback className="bg-[#E6DDD5]">
                             {editingPet.name ? editingPet.name.charAt(0) : 'Pet'}
                           </AvatarFallback>
@@ -1350,12 +1354,12 @@ export default function PetsPage() {
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  <Button variant="outline" className="rounded-full" onClick={() => setIsEditDialogOpen(false)}>
                     Hủy
                   </Button>
                   <Button
                     onClick={handleUpdatePet}
-                    className="bg-[#91114D] hover:bg-[#91114D]/90"
+                    className="bg-[#91114D] hover:bg-[#91114D]/90 rounded-full"
                     disabled={isSubmitting || imageUploading}
                   >
                     {isSubmitting || imageUploading ? 'Đang xử lý...' : 'Cập nhật'}

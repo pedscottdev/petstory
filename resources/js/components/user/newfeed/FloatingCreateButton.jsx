@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/popover";
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
+import { getImageUrl } from '@/utils/imageUtils';
 
 const FloatingCreateButton = forwardRef(({ onPostCreated, userData }, ref) => {
   const { user } = useAuth();
@@ -329,7 +330,7 @@ const FloatingCreateButton = forwardRef(({ onPostCreated, userData }, ref) => {
                                 onClick={() => handlePetSelect(pet)}
                               >
                                 <img
-                                  src={pet.avatar_url || pet.avatar}
+                                  src={getImageUrl(pet.avatar_url || pet.avatar)}
                                   alt={pet.name}
                                   className="w-12 h-12 rounded-full object-cover"
                                 />

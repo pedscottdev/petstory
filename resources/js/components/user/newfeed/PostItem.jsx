@@ -57,7 +57,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getImageUrl } from '@/utils/imageUtils';
 import ButtonLoader from '@/components/ui/ButtonLoader';
 
-export default function PostItem({ post, onPostDeleted, onPostUpdated }) {
+export default function PostItem({ post, onPostDeleted, onPostUpdated, hideGroupName = false }) {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [liked, setLiked] = useState(post.is_liked || false);
@@ -467,8 +467,25 @@ export default function PostItem({ post, onPostDeleted, onPostUpdated }) {
               >
                 {post.user.name}
               </span> đang ở cùng với <span className='font-semibold'>{formatPetNames()}</span>
+              {/* Display group name if post belongs to a group and not hidden */}
+
             </p>
-            <p className="text-xs text-muted-foreground">{post.time}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-muted-foreground">{post.time}</p>
+              {!hideGroupName && post.group && (
+                <div className="flex text-xs gap-2 items-center">
+                  <span>•</span>
+
+                  <span
+                    className=' cursor-pointer hover:underline text-[#91114D]'
+                    onClick={() => navigate(`/groups/${post.group.id || post.group._id}`)}
+                  >
+                    {post.group.name}
+                  </span>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
 

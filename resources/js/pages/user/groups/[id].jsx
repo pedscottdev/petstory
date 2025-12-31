@@ -102,6 +102,9 @@ export default function GroupDetailPage() {
   // Posts data
   const [posts, setPosts] = useState([]);
 
+  // User pets data for post creation
+  const [userPets, setUserPets] = useState([]);
+
   // Transform posts data helper function - similar to NewfeedPage
   const transformPostsData = (rawPosts) => {
     return rawPosts.map(post => {
@@ -181,10 +184,17 @@ export default function GroupDetailPage() {
     return `${years} năm trước`;
   };
 
-  const handlePostCreated = () => {
-    // This function will be called when a new post is created
-    console.log("New post created");
-    // In a real app, you would fetch the updated posts from the server
+  const handlePostCreated = (createdPost) => {
+    // Transform and add the new post to the posts list
+    if (createdPost) {
+      const transformedPost = transformPostsData([createdPost])[0];
+      if (transformedPost) {
+        setPosts(prevPosts => [transformedPost, ...prevPosts]);
+
+        // Update group post count
+        setGroupData(prev => prev ? { ...prev, posts: (prev.posts || 0) + 1 } : prev);
+      }
+    }
   };
 
   // Handle post updated (e.g., likes, content changes)
@@ -202,6 +212,9 @@ export default function GroupDetailPage() {
     setPosts(prevPosts =>
       prevPosts.filter(p => p.id !== postId && p._id !== postId)
     );
+
+    // Update group post count
+    setGroupData(prev => prev ? { ...prev, posts: Math.max((prev.posts || 0) - 1, 0) } : prev);
   };
 
   const handleBackClick = () => {
@@ -406,6 +419,10 @@ export default function GroupDetailPage() {
           const postsData = responseData.posts?.data || responseData.posts || [];
           const transformedPosts = transformPostsData(postsData);
           setPosts(transformedPosts);
+
+          // Extract and set user pets data for post creation
+          const userPetsData = responseData.user_pets || [];
+          setUserPets(userPetsData);
         }
       }
     } catch (error) {
@@ -938,7 +955,7 @@ export default function GroupDetailPage() {
                     <div className="space-y-6">
                       {posts.length > 0 ? (
                         posts.map((post) => (
-                          <PostItem key={post.id} post={post} onPostUpdated={handlePostUpdated} onPostDeleted={handlePostDeleted} />
+                          <PostItem key={post.id} post={post} onPostUpdated={handlePostUpdated} onPostDeleted={handlePostDeleted} hideGroupName={true} />
                         ))) : (
                         <Card className="shadow-none rounded-xl border border-gray-300">
                           <CardContent className="p-12 text-center">
@@ -960,7 +977,7 @@ export default function GroupDetailPage() {
           )}
         </>
       )}
-      {isMember && <FloatingCreateButton ref={floatingButtonRef} />}
+      {isMember && <FloatingCreateButton ref={floatingButtonRef} userData={{ pets: userPets }} groupId={id} onPostCreated={handlePostCreated} />}
     </div>
   );
 }

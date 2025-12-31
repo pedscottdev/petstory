@@ -334,7 +334,8 @@ class PostService
     {
         $query = Post::with(['author', 'likes', 'multimedia', 'group'])
             ->where('author_id', $userId)
-            ->where('is_active', true);
+            ->where('is_active', true)
+            ->whereNull('group_id'); // Exclude posts that belong to groups
 
         // Filter by pet if petId is provided
         if ($petId) {

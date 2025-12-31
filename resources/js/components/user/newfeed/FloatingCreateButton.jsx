@@ -37,7 +37,7 @@ import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import { getImageUrl } from '@/utils/imageUtils';
 
-const FloatingCreateButton = forwardRef(({ onPostCreated, userData }, ref) => {
+const FloatingCreateButton = forwardRef(({ onPostCreated, userData, groupId }, ref) => {
   const { user } = useAuth();
   const { uploadPostImages } = useImageUpload();
   const [isOpen, setIsOpen] = useState(false);
@@ -113,7 +113,8 @@ const FloatingCreateButton = forwardRef(({ onPostCreated, userData }, ref) => {
       // First create the post without images
       const postData = {
         content: postContent.trim(),
-        tagged_pets: taggedPets.map(pet => pet.id)
+        tagged_pets: taggedPets.map(pet => pet.id),
+        ...(groupId && { group_id: groupId })
       };
 
       const response = await createPost(postData);

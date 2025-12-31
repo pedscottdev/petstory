@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Group;
 use App\Models\GroupMember;
+use App\Models\Pet;
 use App\Models\Post;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -87,12 +88,29 @@ class GroupService
         $postService = app(PostService::class);
         $posts = $postService->getGroupPosts($groupId, $page, $perPage, $userId);
 
+        // Get user's pets if user is logged in
+        $userPets = [];
+        if ($userId) {
+            $userPets = Pet::where('owner_id', $userId)
+                ->get(['_id', 'name', 'avatar_url', 'species'])
+                ->map(function ($pet) {
+                    return [
+                        'id' => $pet->_id,
+                        'name' => $pet->name,
+                        'avatar_url' => $pet->avatar_url,
+                        'species' => $pet->species,
+                    ];
+                })
+                ->toArray();
+        }
+
         return [
             'group' => $group,
             'members' => $members,
             'is_member' => $isMember,
             'user_role' => $userRole,
-            'posts' => $posts
+            'posts' => $posts,
+            'user_pets' => $userPets
         ];
     }
 

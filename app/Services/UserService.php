@@ -805,10 +805,11 @@ class UserService
                 ->exists();
         }
 
-        // Get user's posts with pagination
+        // Get user's posts with pagination (exclude posts in groups)
         $postsQuery = Post::with(['author', 'likes', 'multimedia', 'group'])
             ->where('author_id', $userId)
             ->where('is_active', true)
+            ->whereNull('group_id')
             ->orderBy('created_at', 'desc');
         
         $postsPaginated = $postsQuery->paginate($postsPerPage, ['*'], 'page', $postsPage);

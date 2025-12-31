@@ -156,6 +156,7 @@ export default function NewfeedPage() {
         images: images,
         image: images.length > 0 ? images[0] : null,
         is_liked: post.is_liked || false,
+        group: post.group || null,
       };
     });
   };

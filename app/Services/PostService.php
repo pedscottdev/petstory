@@ -9,6 +9,7 @@ use App\Models\PostLike;
 use App\Models\Comment;
 use App\Models\Follow;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class PostService
@@ -145,7 +146,7 @@ class PostService
                     $this->imageUploadService->deleteImage($media->file_url);
                 } catch (\Exception $e) {
                     // Log error but continue with deletion
-                    \Log::warning("Failed to delete image file: {$media->file_url}", [
+                    Log::warning("Failed to delete image file: {$media->file_url}", [
                         'error' => $e->getMessage()
                     ]);
                 }

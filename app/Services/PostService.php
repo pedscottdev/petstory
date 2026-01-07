@@ -53,7 +53,8 @@ class PostService
             'author_id' => $userId,
             'content' => $data['content'],
             'group_id' => $data['group_id'] ?? null,
-            'is_active' => true
+            'is_active' => true,
+            'likes_count' => 0
         ]);
 
         // Tag pets if provided
@@ -187,10 +188,8 @@ class PostService
                 break;
 
             case 'popular':
-                // Get popular posts (most likes in last 7 days)
-                $query->where('created_at', '>=', now()->subDays(7))
-                    ->withCount('likes')
-                    ->orderBy('likes_count', 'desc');
+                // Get popular posts (most likes of all time)
+                $query->orderBy('likes_count', 'desc');
                 break;
 
             case 'latest':
@@ -421,6 +420,12 @@ class PostService
         if ($existingLike) {
             // Unlike
             $existingLike->delete();
+            
+            // Decrement like count on post
+            if ($post->likes_count > 0) {
+                $post->decrement('likes_count');
+            }
+
             return [
                 'action' => 'unliked',
                 'like_count' => PostLike::where('post_id', $postId)->count()
@@ -431,6 +436,9 @@ class PostService
                 'user_id' => $userId,
                 'post_id' => $postId
             ]);
+
+            // Increment like count on post
+            $post->increment('likes_count');
             
             // Create notification if user is not the post author
             if ($post->author_id !== $userId) {
